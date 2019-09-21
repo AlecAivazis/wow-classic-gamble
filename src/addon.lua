@@ -9,6 +9,8 @@ function GambleAddon:OnEnable()
     -- register slash commands
     GambleAddon:RegisterChatCommand("gamble", "ParseCmd")
     GambleAddon:RegisterChatCommand("gmb", "ParseCmd")
+
+    GambleUI:Show()
 end
 
 -- invoked by ace when the addon is disabled

@@ -7,6 +7,9 @@ function GambleAddon:ParseCmd(input)
     if input == "" or not input then 
         return GambleAddon:RootCmd()
     end
+    
+    -- we did not recognize the command
+    print("Unrecognized command: \"" .. input .."\".  Please try again.") 
 end
 
 -- a command with no inputs
