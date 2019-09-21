@@ -3,8 +3,11 @@
 ## Description: Get that mount
 ## Author: Alec Aivazis
 ## Version: 0.0.0
+## OptionalDeps: Ace3
 
 embeds.xml
 
-src\main.lua
+src\addon.lua
+
+src\ui.lua
 src\cmd.lua

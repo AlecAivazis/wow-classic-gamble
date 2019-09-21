@@ -3,11 +3,12 @@ GambleAddon = LibStub("AceAddon-3.0"):NewAddon("Gamble", "AceConsole-3.0")
 
 -- invoked by ace when the addon is enabled
 function GambleAddon:OnEnable()
+    -- initialize the frame
+    GambleUI.Initialize()
+
     -- register slash commands
-    GambleAddon:RegisterChatCommand("gamble", "MainCmd")
-    GambleAddon:RegisterChatCommand("gmb", "MainCmd")
-
-
+    GambleAddon:RegisterChatCommand("gamble", "ParseCmd")
+    GambleAddon:RegisterChatCommand("gmb", "ParseCmd")
 end
 
 -- invoked by ace when the addon is disabled
