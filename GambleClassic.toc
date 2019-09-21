@@ -4,5 +4,7 @@
 ## Author: Alec Aivazis
 ## Version: 0.0.0
 
+embeds.xml
+
 src\main.lua
 src\cmd.lua

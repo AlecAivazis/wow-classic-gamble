@@ -1,11 +1,18 @@
--- the root frame for interacting with GambleClassic
-local frame = CreateFrame("Frame", "GambleClassic_mainFrame", UIParent)
-frame:SetFrameStrata("TOOLTIP")
--- start GambleClassic hidden
-frame:Hide()
+-- addon definition
+GambleAddon = LibStub("AceAddon-3.0"):NewAddon("Gamble", "AceConsole-3.0")
 
-function Main()
-    print("Showing gamble frame")
-    -- show the frame
-    frame:Show()
+-- invoked by ace when the addon is enabled
+function GambleAddon:OnEnable()
+    -- register slash commands
+    GambleAddon:RegisterChatCommand("gamble", "MainCmd")
+    GambleAddon:RegisterChatCommand("gmb", "MainCmd")
+
+
+end
+
+-- invoked by ace when the addon is disabled
+function GambleAddon:OnDisable()
+    -- unregister slash commands
+    GambleAddon:UnregisterChatCommand("gamble")
+    GambleAddon:UnregisterChatCommand("gmb")
 end
