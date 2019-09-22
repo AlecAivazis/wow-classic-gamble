@@ -72,13 +72,10 @@ function GambleCore:onSocialMessage(channel, type, message, author)
         return
     end
 
-    -- get the name of the player
-    playerName = string.gmatch(author, "(%w+)-(%w+)")()
-
     -- if the message is the entry message then the user wants to join the current game
     if message == "1" then
         -- add it to the list of players
-        currentGame.players[playerName] = true
+        currentGame.players[author] = true
 
         -- update the ui
         GambleUI:Refresh()

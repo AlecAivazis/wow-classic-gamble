@@ -223,17 +223,44 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
         finalizeButton:SetRelativeWidth(0.32)
         finalizeButton:SetCallback("OnClick", function() GambleCore:BeginGame() end)
         container:AddChild(finalizeButton)
-        
-        -- some spacing between the buttons
-        GambleUI:HoritzonalSpace(container, 0.01)
 
-        -- a button to explain the current game
-        local explainButton = AceGUI:Create("Button")
-        explainButton:SetText("Explain")
-        explainButton:SetRelativeWidth(0.32)
-        explainButton:SetCallback("OnClick", function() GambleCore:Explain() end)
-        container:AddChild(explainButton)
+        -- some more spacing
+        GambleUI:VerticalSpace(container, "small")
     end 
+
+    
+    -- player commands
+    local hostHeader = AceGUI:Create("Heading")
+    hostHeader:SetText("Player Commands")
+    hostHeader:SetFullWidth(true)
+    container:AddChild(hostHeader)
+
+    -- if the current user is not in the game
+    if not GambleCore:CurrentGame().players[UnitName("player")] then
+        -- a button to join the current game
+        local joinButton = AceGUI:Create("Button")
+        joinButton:SetText("Join Game")
+        joinButton:SetRelativeWidth(0.32)
+        joinButton:SetCallback("OnClick", function() GambleCore:JoinCurrentGame() end)
+        container:AddChild(joinButton)
+    else 
+        -- a button to join the current game
+        local leaveButton = AceGUI:Create("Button")
+        leaveButton:SetText("Leave Game")
+        leaveButton:SetRelativeWidth(0.32)
+        leaveButton:SetCallback("OnClick", function() GambleCore:LeaveCurrentGame() end)
+        container:AddChild(leaveButton)
+    end
+        
+    -- some spacing between the buttons
+    GambleUI:HoritzonalSpace(container, 0.01)
+
+    -- a button to explain the current game
+    local explainButton = AceGUI:Create("Button")
+    explainButton:SetText("Explain")
+    explainButton:SetRelativeWidth(0.32)
+    explainButton:SetCallback("OnClick", function() GambleCore:Explain() end)
+    container:AddChild(explainButton)
 
     -- some more spacing
     GambleUI:VerticalSpace(container, "small")
@@ -252,7 +279,10 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
     -- compute the actual players text
     local players = ""
     for user, _ in pairs(game.players) do
-        players = players .. user .. ", "
+        -- get the name of the player
+        playerName = string.gmatch(user, "(%w+)-(%w+)")()
+
+        players = players .. playerName .. ", "
     end
     -- update the body of the element
     playersBody:SetText(players:sub(0, -3))
