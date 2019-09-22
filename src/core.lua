@@ -144,6 +144,12 @@ end
 function GambleCore:LastCall()
     -- the function to call
     function lastCall() 
+        -- if the game was canceled since last call
+        if currentGame == nil then
+            -- there's nothing to do
+            return
+        end
+
         -- we are no longer accepting players
         currentGame.phase = GamePhase.Rolling
 
