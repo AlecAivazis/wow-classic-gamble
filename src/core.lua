@@ -18,7 +18,9 @@ GamePhase = {
 -- a namspace for the api
 GambleCore = {
     -- the channel that messages have to come in on 
-    channel = ChannelNames.Say
+    channel = ChannelNames.Say,
+    -- players with pending rolls
+    _pendingRolls = {},
 }
 
 -- the message that indicates a user wants to join
@@ -153,6 +155,16 @@ function GambleCore:LastCall()
         -- we are no longer accepting players
         currentGame.phase = GamePhase.Rolling
 
+        -- build up a list of the players
+        local players = {}
+
+        for player, _ in pairs(currentGame.players) do
+            table.insert(players, player)
+        end
+
+        -- execute the game
+        currentGame.rules.Execute(players)
+
         -- redraw the UI
         GambleUI:Refresh()
     end
@@ -161,9 +173,9 @@ function GambleCore:LastCall()
     if LastCallDelay > 0 then 
         -- before we actually begin the game, lets give some stragglers the ability to catch up
         GambleCore:Say("Last call for players! The game will begin in ".. LastCallDelay .." seconds...")
-
+        
         -- start the game
-        GambleCore:Delay(LastCallDelay, lastCall)
+        GambleUtils:Delay(LastCallDelay, lastCall)
     -- there is no last call delay
     else
         -- just start the game
@@ -184,16 +196,19 @@ function GambleCore:onSocialMessage(channel, type, message, playerID)
         return
     end
 
+    -- the name of the player
+    playerName = string.gmatch(playerID, "(%w+)-(%w+)")()
+
     -- we still want to track people coming and going even if we're not host
 
     -- if the message is the entry message then the user wants to join the current game
     if message == JoinMessage then
         -- add it to the list of players
-        currentGame.players[playerID] = true
+        currentGame.players[playerName] = true
     -- the message could indicate someone wants to leave
     elseif message == LeaveMessage then 
         -- remove the player from the list
-        currentGame.players[playerID] = nil
+        currentGame.players[playerName] = nil
     end
 
     -- update the ui
@@ -201,13 +216,48 @@ function GambleCore:onSocialMessage(channel, type, message, playerID)
 end
 
 -- whenever there is a system message (aka a roll)
-function GambleCore:onSystemMessage(type, message)
+function GambleCore:onSystemMessage(type, text)
     -- if the current user is not the host of a game
-    if not GambleCore:IsHosting() then
+    if not GambleCore:IsHosting() or not GambleUtils:TableHasKeys(GambleCore._pendingRolls) then
         -- there's nothing to do
         return
     end
 
+    -- separate the messages by word
+    local message = GambleUtils:SplitString(text, " ")
+    -- extract the information from the message
+    local player, roll, rangeString = message[1], tonumber(message[3]), message[4]
+
+    -- look up the expected roll
+    local expected = GambleCore._pendingRolls[player]
+
+    -- if we don't care about rolls from this player
+    if expected == nil then
+        print("don't care")
+        return
+    end
+
+    -- extract the roll range from the message
+    local range = GambleUtils:SplitString(string.sub(rangeString, 2, -2), "-")
+    local min, max = tonumber(range[1]), tonumber(range[2])
+
+    -- if the bounds of the roll were incorrect
+    if (min ~= expected.Min) or (max ~= expected.Max) then
+        -- there was a roll mismatch so we need to whisper the player and ask them to re-roll
+        local message = "Sorry, that roll has the incorrect bounds. Please roll again "
+                        .. "with the correct bounds by typing /roll " .. expected.Min .. " " .. expected.Max
+                    
+        -- send them back the current game's explaination
+        SendChatMessage(message , "WHISPER" , nil , player)
+        return
+    end
+
+    -- add the result to the table
+    GambleCore._rollResults[player] = roll
+    -- remove the entry in the pending table
+    GambleCore._pendingRolls[player] = nil
+    -- decrement the count of pending rolls
+    GambleCore._pendingRollsCount = GambleCore._pendingRollsCount - 1
 end
 
 -- when a whisper is recieved
@@ -244,34 +294,38 @@ function GambleCore:Say(message)
     SendChatMessage(message, currentGame.channel)
 end
 
-local waitTable = {};
-local waitFrame = nil;
+-- wait for rolls from the specified players
+function GambleCore:CollectSameRoll(players, min, max, onComplete, onError)
+    -- only the host can do this
+    if not GambleCore:IsHosting() then
+        return
+    end
 
--- delays the execution of the provided function with the given args
-function GambleCore:Delay(delay, func, ...)
-  if(type(delay)~="number" or type(func)~="function") then
-    return false;
-  end
-  if(waitFrame == nil) then
-    waitFrame = CreateFrame("Frame","WaitFrame", UIParent);
-    waitFrame:SetScript("onUpdate",function (self,elapse)
-      local count = #waitTable;
-      local i = 1;
-      while(i<=count) do
-        local waitRecord = tremove(waitTable,i);
-        local d = tremove(waitRecord,1);
-        local f = tremove(waitRecord,1);
-        local p = tremove(waitRecord,1);
-        if(d>elapse) then
-          tinsert(waitTable,i,{d-elapse,f,p});
-          i = i + 1;
-        else
-          count = count - 1;
-          f(unpack(p));
-        end
-      end
-    end);
-  end
-  tinsert(waitTable,{delay,func,{...}});
-  return true;
+
+    -- build up the list of pending rolls
+    GambleCore._pendingRolls = {}
+    GambleCore._rollResults = {}
+    GambleCore._pendingRollsCount = table.getn(players)
+
+    print(GambleCore._pendingRollsCount)
+
+    -- if we were given an on complete callback
+    if not onComplete == nil then 
+        -- save it
+        GambleCore._pendingRollCompleteCallback = onComplete
+    end
+
+    -- if we were given an onError callback
+    if not onError == nil then
+        GambleCore._pendingRollErrorCallback = onError
+    end
+
+    -- for every player
+    for _, player in ipairs(players) do
+        -- add an entry in the pending roll table
+        GambleCore._pendingRolls[player] = {
+            Min = min,
+            Max = max,
+        }
+    end
 end

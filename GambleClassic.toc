@@ -9,6 +9,7 @@ embeds.xml
 
 src\addon.lua
 
+src\utils.lua
 src\games.lua
 src\core.lua
 src\ui.lua

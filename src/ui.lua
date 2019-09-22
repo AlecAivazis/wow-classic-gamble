@@ -313,9 +313,6 @@ function GambleUI:_drawPlayTab_gatheringPlayers(container)
     for user, val in pairs(game.players) do
         -- players could have been removed (set to false)
         if val then 
-            -- get the name of the player
-            playerName = string.gmatch(user, "(%w+)-(%w+)")()
-    
             players = players .. playerName .. ", "
         end
     end
