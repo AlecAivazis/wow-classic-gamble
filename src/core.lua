@@ -8,6 +8,13 @@ ChannelNames = {
     Say = "SAY",
 }
 
+-- a game transitions between three distinct phases
+GamePhase = {
+    GatheringPlayers = "accepting",
+    Rolling = "rolling",
+    Payout = "payout",
+}
+
 -- a namspace for the api
 GambleCore = {
     -- the channel that messages have to come in on 
@@ -18,6 +25,9 @@ GambleCore = {
 JoinMessage = "1"
 LeaveMessage = "imabitchnevermind"
 ExplainMessage = "explain"
+
+-- the default delay on last call
+LastCallDelay = 5
 
 -- the current game (if there is one)
 local currentGame = nil
@@ -38,6 +48,11 @@ function GambleCore:Initialize()
     AceEvent:RegisterEvent("CHAT_MSG_SYSTEM", function (...) GambleCore:onSystemMessage(...) end)
 end
 
+
+------------------------------------------------------------
+-- Actions
+------------------------------------------------------------
+
 -- used to start a game between this and all listening instances of Gamble
 function GambleCore:StartGame(type)
     -- the rules to use
@@ -55,11 +70,12 @@ function GambleCore:StartGame(type)
         channel = GambleCore.channel,
         rules = rules,
         players = {},
+        phase = GamePhase.GatheringPlayers,
     }
     
     -- tell everyone what's going on
     GambleCore:Say(
-        "Now starting a game of " .. rules.Name .. "! Type " .. JoinMessage 
+        "Now playing " .. rules.Name .. "! Type " .. JoinMessage 
         .. " in this channel to join. If you don't know how to play, you can whisper me \"" 
         .. ExplainMessage .. "\" for help."
     )
@@ -78,7 +94,7 @@ function GambleCore:CancelGame()
     end
 
     -- tell everyone what's going on
-    GambleCore:Say("Sorry! The game is now cancelled.")
+    GambleCore:Say("Sorry! The game has been cancelled.")
 
     -- clear the current game
     currentGame = nil
@@ -90,7 +106,7 @@ end
 -- used to join the current game
 function GambleCore:JoinCurrentGame()
     -- if there is no current game
-    if not currentGame then
+    if not currentGame or not currentGame.phase == GamePhase.AcceptingInvites then
         print("There is no current game to join")
         return
     end
@@ -102,8 +118,8 @@ end
 
 -- used to leave the current game
 function GambleCore:LeaveCurrentGame()
-    -- if there is no current game
-    if not currentGame then
+    -- if there is no current game or the game is not allowing players to change
+    if not currentGame or not currentGame.phase == GamePhase.AcceptingInvites then
         print("There is no current game to join")
         return
     end
@@ -122,6 +138,31 @@ function GambleCore:Explain()
 
     -- all we have to do to leave is to say the leave message on the appropriate channel
     GambleCore:Say(currentGame.rules.Explain)
+end
+
+-- invoked when its time to start the game
+function GambleCore:LastCall()
+    -- the function to call
+    function lastCall() 
+        -- we are no longer accepting players
+        currentGame.phase = GamePhase.Rolling
+
+        -- redraw the UI
+        GambleUI:Refresh()
+    end
+
+    -- if we have a last call delay
+    if LastCallDelay > 0 then 
+        -- before we actually begin the game, lets give some stragglers the ability to catch up
+        GambleCore:Say("Last call for players! The game will begin in ".. LastCallDelay .." seconds...")
+
+        -- start the game
+        GambleCore:Delay(LastCallDelay, lastCall)
+    -- there is no last call delay
+    else
+        -- just start the game
+        lastCall()
+    end
 end
 
 
@@ -195,4 +236,36 @@ end
 -- sends a message on the appropriate channel for the current game
 function GambleCore:Say(message) 
     SendChatMessage(message, currentGame.channel)
+end
+
+local waitTable = {};
+local waitFrame = nil;
+
+-- delays the execution of the provided function with the given args
+function GambleCore:Delay(delay, func, ...)
+  if(type(delay)~="number" or type(func)~="function") then
+    return false;
+  end
+  if(waitFrame == nil) then
+    waitFrame = CreateFrame("Frame","WaitFrame", UIParent);
+    waitFrame:SetScript("onUpdate",function (self,elapse)
+      local count = #waitTable;
+      local i = 1;
+      while(i<=count) do
+        local waitRecord = tremove(waitTable,i);
+        local d = tremove(waitRecord,1);
+        local f = tremove(waitRecord,1);
+        local p = tremove(waitRecord,1);
+        if(d>elapse) then
+          tinsert(waitTable,i,{d-elapse,f,p});
+          i = i + 1;
+        else
+          count = count - 1;
+          f(unpack(p));
+        end
+      end
+    end);
+  end
+  tinsert(waitTable,{delay,func,{...}});
+  return true;
 end

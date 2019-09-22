@@ -95,14 +95,46 @@ end
 
 -- invoked when the user wants to draw the play tab
 function GambleUI:_drawPlayTab(container)
+    -- save a local reference to the current game
+    local game = GambleCore:CurrentGame()
+
     -- if there is no current game
-    if not GambleCore:CurrentGame() then
-        -- render the appropriate state of the playtab
+    if not game then
         GambleUI:_drawPlayTab_noCurrentGame(container)
-    -- otherwise there is a game currently going
-    else
-        -- render the summary of the current game
-        GambleUI:_drawPlayTab_acceptingInvites(container)
+
+    -- there is a game going on
+    else 
+        -- show some basic information about the game, regardless of the current phase
+
+        -- save a reference to the current game
+        local game = GambleCore:CurrentGame()
+    
+        -- add a little spacing at the top
+        GambleUI:VerticalSpace(container, "small")
+    
+        -- tell the user what's being played
+        local nowPlayingHeader = AceGUI:Create("Label")
+        nowPlayingHeader:SetFontObject(GameFontHighlightLarge)
+        nowPlayingHeader:SetText("Now Playing: " .. game.kind)
+        nowPlayingHeader:SetFullWidth(true)
+        container:AddChild(nowPlayingHeader)
+    
+        -- list who the dealer is
+        local hostLabel = AceGUI:Create("Label")
+        hostLabel:SetText("Host: " .. game.creator)
+        hostLabel:SetFontObject(GameFontHighlightMedium)
+        container:AddChild(hostLabel)
+    
+        -- some more spacing
+        GambleUI:VerticalSpace(container, "small")
+
+        -- show the phase-specific content
+        if game.phase == GamePhase.GatheringPlayers then
+            GambleUI:_drawPlayTab_gatheringPlayers(container)
+        -- otherwise the game could be going and rolls being made
+        elseif game.phase == GamePhase.Rolling then
+            GambleUI:_drawPlayTab_rolling(container)
+        end
     end
 end
 
@@ -171,8 +203,7 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
 
     -- for each game
     for i = 1, #orderedGameKeys do
-        -- the game
-
+        -- the game we are giving a button
         local game = Games[orderedGameKeys[i]]
 
         -- add the button
@@ -194,30 +225,11 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
     end
 end
 
-function GambleUI:_drawPlayTab_acceptingInvites(container)
+function GambleUI:_drawPlayTab_gatheringPlayers(container)
     -- save a reference to the current game
     local game = GambleCore:CurrentGame()
 
-    -- add a little spacing at the top
-    GambleUI:VerticalSpace(container, "small")
-
-    -- tell the user what's being played
-    local nowPlayingHeader = AceGUI:Create("Label")
-    nowPlayingHeader:SetFontObject(GameFontHighlightLarge)
-    nowPlayingHeader:SetText("Now Playing: " .. game.kind)
-    nowPlayingHeader:SetFullWidth(true)
-    container:AddChild(nowPlayingHeader)
-
-    -- list who the dealer is
-    local hostLabel = AceGUI:Create("Label")
-    hostLabel:SetText("Host: " .. game.creator)
-    hostLabel:SetFontObject(GameFontHighlightMedium)
-    container:AddChild(hostLabel)
-
-    -- some more spacing
-    GambleUI:VerticalSpace(container, "small")
-
-    -- if the current user is the dealer
+    -- if the current user is the host
     if GambleCore:IsHosting() then
         -- add a commands section the host can use to officiate
         local hostHeader = AceGUI:Create("Heading")
@@ -225,7 +237,7 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
         hostHeader:SetFullWidth(true)
         container:AddChild(hostHeader)
 
-        -- a button to explain the current game
+        -- a button to cancel the current game
         local cancelButton = AceGUI:Create("Button")
         cancelButton:SetText("Cancel Game")
         cancelButton:SetRelativeWidth(0.32)
@@ -239,7 +251,7 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
         local finalizeButton = AceGUI:Create("Button")
         finalizeButton:SetText("Begin Game")
         finalizeButton:SetRelativeWidth(0.32)
-        finalizeButton:SetCallback("OnClick", function() GambleCore:BeginGame() end)
+        finalizeButton:SetCallback("OnClick", function() GambleCore:LastCall() end)
         container:AddChild(finalizeButton)
         
         -- some spacing between the buttons
@@ -256,7 +268,6 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
         GambleUI:VerticalSpace(container, "small")
     end 
 
-    
     -- player commands
     local hostHeader = AceGUI:Create("Heading")
     hostHeader:SetText("Player Commands")
@@ -310,6 +321,38 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
     end
     -- update the body of the element
     playersBody:SetText(players:sub(0, -3))
+end
+
+function GambleUI:_drawPlayTab_rolling(container)
+    -- if the current user is the host
+    if GambleCore:IsHosting() then
+        -- add a commands section the host can use to officiate
+        local hostHeader = AceGUI:Create("Heading")
+        hostHeader:SetText("Host Commands")
+        hostHeader:SetFullWidth(true)
+        container:AddChild(hostHeader)
+        
+        -- a button to cancel the current game
+        local cancelButton = AceGUI:Create("Button")
+        cancelButton:SetText("Cancel Game")
+        cancelButton:SetRelativeWidth(0.32)
+        cancelButton:SetCallback("OnClick", function() GambleCore:CancelGame() end)
+        container:AddChild(cancelButton)
+        
+        -- some spacing between the buttons
+        GambleUI:HoritzonalSpace(container, 0.01)
+
+        -- a button to explain the current game
+        local explainButton = AceGUI:Create("Button")
+        explainButton:SetText("Explain")
+        explainButton:SetRelativeWidth(0.32)
+        explainButton:SetCallback("OnClick", function() GambleCore:Explain() end)
+        container:AddChild(explainButton)
+
+        -- some more spacing
+        GambleUI:VerticalSpace(container, "small")
+    end
+
 end
 
 -- invoked when the user wants to draw the history tab
