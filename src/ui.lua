@@ -166,6 +166,16 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
         hostHeader:SetFullWidth(true)
         container:AddChild(hostHeader)
 
+        -- a button to explain the current game
+        local cancelButton = AceGUI:Create("Button")
+        cancelButton:SetText("Cancel Game")
+        cancelButton:SetRelativeWidth(0.3)
+        cancelButton:SetCallback("OnClick", function() GambleCore:CancelGame() end)
+        container:AddChild(cancelButton)
+        
+        -- some spacing between the buttons
+        GambleUI:HoritzonalSpace(container, 0.01)
+
         -- a button to finalize the current game
         local finalizeButton = AceGUI:Create("Button")
         finalizeButton:SetText("Begin Game")
@@ -180,7 +190,7 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
         local explainButton = AceGUI:Create("Button")
         explainButton:SetText("Explain")
         explainButton:SetRelativeWidth(0.3)
-        explainButton:SetCallback("OnClick", function() GambleCore:ExplainA() end)
+        explainButton:SetCallback("OnClick", function() GambleCore:Explain() end)
         container:AddChild(explainButton)
     end 
 

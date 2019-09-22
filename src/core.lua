@@ -33,6 +33,27 @@ function GambleCore:StartGame(type)
     GambleUI:Refresh()
 end
 
+
+-- used to cancel the current game
+function GambleCore:CancelGame()
+    -- if the user is not the host
+    if not GambleCore:IsHosting() then
+        print("cannot do that")
+        return
+    end
+
+    -- clear the current game
+    currentGame = nil
+
+    -- update the UI
+    GambleUI:Refresh()
+end
+
+
+------------------------------------------------------------
+-- Event Handlers
+------------------------------------------------------------
+
 -- invoked when there is a social message
 function GambleCore:onSocialMessage(type, message, playerName)
     -- if the current user is not the host of a game
