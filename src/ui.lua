@@ -158,22 +158,40 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
     -- some vertical spacing under the header
     GambleUI:VerticalSpace(container, "small")
 
-    -- add a button for hilo
-    local hiloButton = AceGUI:Create("Button")
-    hiloButton:SetText("HiLo")
-    hiloButton:SetRelativeWidth(0.48)
-    hiloButton:SetCallback("OnClick", function() GambleCore:StartGame("HiLo") end)
-    container:AddChild(hiloButton)
+    -- each potential game gets a button in the UI
 
-    -- we need a 10% space between the two
-    GambleUI:HoritzonalSpace(container, 0.04)
+    -- build a sorted list of each game
+    local orderedGameKeys = {}
+    for k in pairs(Games) do
+        table.insert(orderedGameKeys, k)
+    end
 
-    -- add a button for big twos
-    local bigTwosButton = AceGUI:Create("Button")
-    bigTwosButton:SetText("Big Twos")
-    bigTwosButton:SetCallback("OnClick", function() GambleCore:StartGame("Big Twos") end)
-    bigTwosButton:SetRelativeWidth(0.48)
-    container:AddChild(bigTwosButton)
+    -- sort the list
+    table.sort(orderedGameKeys)
+
+    -- for each game
+    for i = 1, #orderedGameKeys do
+        -- the game
+
+        local game = Games[orderedGameKeys[i]]
+
+        -- add the button
+        local button = AceGUI:Create("Button")
+        button:SetText(game.Name)
+        button:SetRelativeWidth(0.48)
+        button:SetCallback("OnClick", function() GambleCore:StartGame(game.Name) end)
+        container:AddChild(button)
+
+        -- if the button is in the left column
+        if i % 2 == 1 then
+            -- we need a 10% space before we add the right column
+            GambleUI:HoritzonalSpace(container, 0.04)
+        -- the button is on the right
+        else 
+            -- add a little before the next row
+            GambleUI:VerticalSpace(container, "small")
+        end
+    end
 end
 
 function GambleUI:_drawPlayTab_acceptingInvites(container)
