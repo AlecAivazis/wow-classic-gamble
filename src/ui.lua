@@ -1,7 +1,7 @@
-GambleUI = {}
-
--- local imports
+-- externals
 local AceGUI = LibStub("AceGUI-3.0")
+
+GambleUI = {}
 
 -- tab name constants
 local TabPlay = "play"
@@ -35,7 +35,7 @@ function GambleUI:Initialize()
         -- save a reference to the container in case we need to update it out of band
         GambleUI._tabFrame = container
         GambleUI._currentTab = tabName
-        
+
         -- draw the selected tab
         GambleUI:_drawTab(container, tabName)
     end )
@@ -60,7 +60,7 @@ function GambleUI:Hide()
     GambleUI.frame:Hide()
 end
 
--- Refreshes the UI 
+-- Refreshes the UI
 function GambleUI:Refresh()
     GambleUI:_drawTab(GambleUI._tabFrame, GambleUI._currentTab)
 end
@@ -81,20 +81,20 @@ function GambleUI:_drawTab(container, which)
     scrollContainer = AceGUI:Create("ScrollFrame")
     scrollContainer:SetLayout("Flow")
     container:AddChild(scrollContainer)
-    
+
     -- if the user is showing the play tab
     if which == TabPlay then
         GambleUI:_drawPlayTab(scrollContainer)
     -- otherwise they could be showing the history tab
-    elseif which == TabHistory then 
+    elseif which == TabHistory then
         GambleUI:_drawHistoryTab(scrollContainer)
     end
 end
 
 -- invoked when the user wants to draw the play tab
-function GambleUI:_drawPlayTab(container) 
+function GambleUI:_drawPlayTab(container)
     -- if there is no current game
-    if not GambleCore.currentGame then 
+    if not GambleCore:CurrentGame() then
         -- render the appropriate state of the playtab
         GambleUI:_drawPlayTab_noCurrentGame(container)
     -- otherwise there is a game currently going
@@ -111,7 +111,7 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
     head:SetText("Start a Game")
     head:SetFullWidth(true)
     container:AddChild(head)
-    
+
     -- some vertical spacing under the header
     GambleUI:VerticalSpace(container, "small")
 
@@ -133,18 +133,38 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
     container:AddChild(bigTwosButton)
 end
 
-function GambleUI:_drawPlayTab_currentGame(container) 
-    -- for now just tell them its coming
-    local content = AceGUI:Create("Label")
-    content:SetText("theres a game going!")
+function GambleUI:_drawPlayTab_currentGame(container)
+    -- save a reference to the current game
+    local game = GambleCore:CurrentGame()
 
-    container:AddChild(content)
+    -- add a little spacing at the top
+    GambleUI:VerticalSpace(container, "small")
+
+    -- tell the user what's being played
+    local nowPlayingHeader = AceGUI:Create("Label")
+    nowPlayingHeader:SetFontObject(GameFontHighlightLarge)
+    nowPlayingHeader:SetText("Now Playing: " .. game.kind)
+    nowPlayingHeader:SetFullWidth(true)
+    container:AddChild(nowPlayingHeader)
+
+    -- list who the dealer is
+    local dealerHeader = AceGUI:Create("Label")
+    dealerHeader:SetText("Dealer: " .. game.creator)
+    dealerHeader:SetFontObject(GameFontHighlightMedium)
+    container:AddChild(dealerHeader)
+
+    -- some more spacing
+    GambleUI:VerticalSpace(container, "small")
+
+    -- list the people who have entered
+
 end
 
 -- invoked when the user wants to draw the history tab
 function GambleUI:_drawHistoryTab(container)
     -- for now just tell them its coming
     local content = AceGUI:Create("Label")
+    content:SetFontObject(GameFontHighlightLarge)
     content:SetText("Coming soon!")
 
     container:AddChild(content)
