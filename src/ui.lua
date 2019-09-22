@@ -154,6 +154,7 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
     local channelSelect = AceGUI:Create("Dropdown")
     channelSelect:SetList({})
     channelSelect:SetCallback("OnValueChanged", function (table, event, key)
+        print("updating channel")
         -- set the channel config
         GambleCore.channel = key
     end)
@@ -168,6 +169,8 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
         channelSelect:AddItem(ChannelNames.Party, "Party")
         -- default to that selected
         channelSelect:SetValue(ChannelNames.Party)
+        -- update the initial state
+        GambleCore.channel = ChannelNames.Party
     end
 
     -- if the player is in a raid
@@ -176,6 +179,8 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
         channelSelect:AddItem(ChannelNames.Raid, "Raid")
         -- default to that selected
         channelSelect:SetValue(ChannelNames.Raid)
+        -- update the initial state
+        GambleCore.channel = ChannelNames.Raid
     end
 
     -- some spacing before the game select
@@ -313,7 +318,7 @@ function GambleUI:_drawPlayTab_gatheringPlayers(container)
     for user, val in pairs(game.players) do
         -- players could have been removed (set to false)
         if val then 
-            players = players .. playerName .. ", "
+            players = players .. user .. ", "
         end
     end
     -- update the body of the element

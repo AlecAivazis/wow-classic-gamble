@@ -41,7 +41,9 @@ function GambleCore:Initialize()
     -- social messages
     AceEvent:RegisterEvent("CHAT_MSG_SAY", function (...) GambleCore:onSocialMessage(ChannelNames.Say, ...) end)
     AceEvent:RegisterEvent("CHAT_MSG_PARTY", function (...) GambleCore:onSocialMessage(ChannelNames.Party, ...) end)
+    AceEvent:RegisterEvent("CHAT_MSG_PARTY_LEADER", function (...) GambleCore:onSocialMessage(ChannelNames.Party, ...) end)
     AceEvent:RegisterEvent("CHAT_MSG_RAID", function (...) GambleCore:onSocialMessage(ChannelNames.Raid, ...) end)
+    AceEvent:RegisterEvent("CHAT_MSG_RAID_LEADER", function (...) GambleCore:onSocialMessage(ChannelNames.Party, ...) end)
 
     -- whispers can be for explanation while a game is accepting invites
     AceEvent:RegisterEvent("CHAT_MSG_WHISPER", function (...) GambleCore:onWhisper(...) end)
@@ -191,15 +193,13 @@ end
 -- invoked when there is a social message
 function GambleCore:onSocialMessage(channel, type, message, playerID)
     -- if the message is on the wrong channel or there is no current game
-    if not channel == GambleCore.channel or GambleCore:CurrentGame() == nil then
+    if GambleCore:CurrentGame() == nil or channel ~= currentGame.channel  then
         -- there's nothing to do
         return
     end
 
     -- the name of the player
     playerName = string.gmatch(playerID, "(%w+)-(%w+)")()
-
-    -- we still want to track people coming and going even if we're not host
 
     -- if the message is the entry message then the user wants to join the current game
     if message == JoinMessage then
@@ -245,7 +245,7 @@ function GambleCore:onSystemMessage(type, text)
     if (min ~= expected.Min) or (max ~= expected.Max) then
         -- there was a roll mismatch so we need to whisper the player and ask them to re-roll
         local message = "Sorry, that roll has the incorrect bounds. Please roll again "
-                        .. " by typing /roll " 
+                        .. "by typing /roll " 
 
         -- if the lower bound is one, its optional
         if expected.Min ~= 1 then
