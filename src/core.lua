@@ -3,16 +3,20 @@ local AceEvent = LibStub("AceEvent-3.0")
 
 -- channel enum values
 ChannelNames = {
-    Raid = "raid",
-    Party = "party",
-    Say = "say",
+    Raid = "RAID",
+    Party = "PARTY",
+    Say = "SAY",
 }
 
 -- a namspace for the api
 GambleCore = {
     -- the channel that messages have to come in on 
-    channel = ChannelNames.Raid
+    channel = ChannelNames.Say
 }
+
+-- the message that indicates a user wants to join
+JoinMessage = "1"
+LeaveMessage = "imabitchnevermind"
 
 -- the current game (if there is one)
 local currentGame = nil
@@ -36,6 +40,7 @@ function GambleCore:StartGame(type)
     currentGame = {
         kind = type,
         creator = UnitName("player"),
+        channel = GambleCore.channel,
         players = {},
     }
 
@@ -59,13 +64,38 @@ function GambleCore:CancelGame()
     GambleUI:Refresh()
 end
 
+-- used to join the current game
+function GambleCore:JoinCurrentGame()
+    -- if there is no current game
+    if not currentGame then
+        print("There is no current game to join")
+        return
+    end
+
+    -- all we have to do to join the current game is say the join message on the 
+    -- designated channel
+    SendChatMessage(JoinMessage, currentGame.channel)
+end
+
+-- used to leave the current game
+function GambleCore:LeaveCurrentGame()
+    -- if there is no current game
+    if not currentGame then
+        print("There is no current game to join")
+        return
+    end
+
+    -- all we have to do to leave is to say the leave message on the appropriate channel
+    SendChatMessage(LeaveMessage, currentGame.channel)
+end
+
 
 ------------------------------------------------------------
 -- Event Handlers
 ------------------------------------------------------------
 
 -- invoked when there is a social message
-function GambleCore:onSocialMessage(channel, type, message, author)
+function GambleCore:onSocialMessage(channel, type, message, playerID)
     -- if the message is on the wrong channel or the current user is not the host of a game 
     if not channel == GambleCore.channel or not GambleCore:IsHosting() then
         -- there's nothing to do
@@ -73,14 +103,17 @@ function GambleCore:onSocialMessage(channel, type, message, author)
     end
 
     -- if the message is the entry message then the user wants to join the current game
-    if message == "1" then
+    if message == JoinMessage then
         -- add it to the list of players
-        currentGame.players[author] = true
-
-        -- update the ui
-        GambleUI:Refresh()
+        currentGame.players[playerID] = true
+    -- the message could indicate someone wants to leave
+    elseif message == LeaveMessage then 
+        -- remove the player from the list
+        currentGame.players[playerID] = nil
     end
 
+    -- update the ui
+    GambleUI:Refresh()
 end
 
 -- whenever there is a system message (aka a roll)

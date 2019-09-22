@@ -121,12 +121,12 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
     -- a dropdown to choose the channel to show
     local channelSelect = AceGUI:Create("Dropdown")
     channelSelect:SetList({})
-    channelSelect:AddItem(ChannelNames.Say, "Say")
-    channelSelect:SetValue(ChannelNames.Say)
     channelSelect:SetCallback("OnValueChanged", function (table, event, key)
         -- set the channel config
         GambleCore.channel = key
     end)
+    channelSelect:AddItem(ChannelNames.Say, "Say")
+    channelSelect:SetValue(ChannelNames.Say)
     channelSelect:SetWidth(100)
     container:AddChild(channelSelect)
 
@@ -235,8 +235,11 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
     hostHeader:SetFullWidth(true)
     container:AddChild(hostHeader)
 
+    -- the fully qualified name of the current player
+    local currentPlayerName = UnitName("player") .. "-" .. GetRealmName()
+
     -- if the current user is not in the game
-    if not GambleCore:CurrentGame().players[UnitName("player")] then
+    if not GambleCore:CurrentGame().players[currentPlayerName] then
         -- a button to join the current game
         local joinButton = AceGUI:Create("Button")
         joinButton:SetText("Join Game")
@@ -278,11 +281,14 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
     container:AddChild(playersBody)
     -- compute the actual players text
     local players = ""
-    for user, _ in pairs(game.players) do
-        -- get the name of the player
-        playerName = string.gmatch(user, "(%w+)-(%w+)")()
-
-        players = players .. playerName .. ", "
+    for user, val in pairs(game.players) do
+        -- players could have been removed (set to false)
+        if val then 
+            -- get the name of the player
+            playerName = string.gmatch(user, "(%w+)-(%w+)")()
+    
+            players = players .. playerName .. ", "
+        end
     end
     -- update the body of the element
     playersBody:SetText(players:sub(0, -3))
