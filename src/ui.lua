@@ -251,16 +251,6 @@ function GambleUI:_drawPlayTab_gatheringPlayers(container)
         
         -- some spacing between the buttons
         GambleUI:HoritzonalSpace(container, 0.01)
-
-        -- a button to finalize the current game
-        local finalizeButton = AceGUI:Create("Button")
-        finalizeButton:SetText("Begin Game")
-        finalizeButton:SetRelativeWidth(0.32)
-        finalizeButton:SetCallback("OnClick", function() GambleCore:LastCall() end)
-        container:AddChild(finalizeButton)
-        
-        -- some spacing between the buttons
-        GambleUI:HoritzonalSpace(container, 0.01)
     
         -- a button to explain the current game
         local explainButton = AceGUI:Create("Button")
@@ -269,6 +259,19 @@ function GambleUI:_drawPlayTab_gatheringPlayers(container)
         explainButton:SetCallback("OnClick", function() GambleCore:Explain() end)
         container:AddChild(explainButton)
 
+        -- if there are at least two players present we can start the game
+        if GambleCore:CurrentNumberOfPlayers() >= 2 then
+            -- some spacing between the buttons
+            GambleUI:HoritzonalSpace(container, 0.01)
+    
+            -- a button to start the game
+            local finalizeButton = AceGUI:Create("Button")
+            finalizeButton:SetText("Begin Game")
+            finalizeButton:SetRelativeWidth(0.32)
+            finalizeButton:SetCallback("OnClick", function() GambleCore:LastCall() end)
+            container:AddChild(finalizeButton)
+        end
+        
         -- some more spacing
         GambleUI:VerticalSpace(container, "small")
     end 
@@ -280,7 +283,7 @@ function GambleUI:_drawPlayTab_gatheringPlayers(container)
     container:AddChild(hostHeader)
 
     -- the fully qualified name of the current player
-    local currentPlayerName = UnitName("player") .. "-" .. GetRealmName()
+    local currentPlayerName = UnitName("player")
 
     -- if the current user is not in the game
     if not GambleCore:CurrentGame().players[currentPlayerName] then
@@ -313,20 +316,18 @@ function GambleUI:_drawPlayTab_gatheringPlayers(container)
     playersBody:SetFullWidth(true)
     playersBody:SetFontObject(GameFontHighlightMedium)
     container:AddChild(playersBody)
+
     -- compute the actual players text
     local players = ""
-    for user, val in pairs(game.players) do
-        -- players could have been removed (set to false)
-        if val then 
-            players = players .. user .. ", "
-        end
+    for _, user in ipairs(GambleCore:CurrentPlayers()) do
+        players = players .. user .. ", "
     end
     -- update the body of the element
     playersBody:SetText(players:sub(0, -3))
 end
 
 function GambleUI:_drawPlayTab_rolling(container)
-    -- if the current user is the host
+    -- add the host commands
     if GambleCore:IsHosting() then
         -- add a commands section the host can use to officiate
         local hostHeader = AceGUI:Create("Heading")
@@ -355,6 +356,24 @@ function GambleUI:_drawPlayTab_rolling(container)
         GambleUI:VerticalSpace(container, "small")
     end
 
+    -- add a player commands section if the user needs to roll
+    if GambleCore:PlayerNeedsToRoll() then
+        -- add players commands
+        local playerHeader = AceGUI:Create("Heading")
+        playerHeader:SetText("Player Commands")
+        playerHeader:SetFullWidth(true)
+        container:AddChild(playerHeader)
+
+        -- a button to roll
+        local RollButton = AceGUI:Create("Button")
+        RollButton:SetText("Roll")
+        RollButton:SetRelativeWidth(0.32)
+        RollButton:SetCallback("OnClick", function() GambleCore:Roll() end)
+        container:AddChild(RollButton)
+
+        -- some more spacing
+        GambleUI:VerticalSpace(container, "small")
+    end
 end
 
 -- invoked when the user wants to draw the history tab

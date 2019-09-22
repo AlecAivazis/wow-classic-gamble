@@ -29,7 +29,7 @@ LeaveMessage = "imabitchnevermind"
 ExplainMessage = "explain"
 
 -- the default delay on last call
-LastCallDelay = 5
+LastCallDelay = 0
 
 -- the current game (if there is one)
 local currentGame = nil
@@ -233,7 +233,6 @@ function GambleCore:onSystemMessage(type, text)
 
     -- if we don't care about rolls from this player
     if expected == nil then
-        print("don't care")
         return
     end
 
@@ -274,6 +273,9 @@ function GambleCore:onSystemMessage(type, text)
         -- we can invoke the roll callback handler with the results
         GambleCore._pendingRollCompleteCallback(GambleCore._rollResults)
     end
+
+    -- update the UI
+    GambleUI:Refresh()
 end
 
 -- when a whisper is recieved
@@ -310,6 +312,99 @@ function GambleCore:Say(message)
     SendChatMessage(message, currentGame.channel)
 end
 
+function GambleCore:CurrentPlayers()
+    -- the list of valid players
+    local players = {}
+
+    -- get the current game
+    local game = GambleCore:CurrentGame()
+    -- if there is no game
+    if game == nil then 
+        -- there are no players
+        return players
+    end
+
+    for user, val in pairs(game.players) do
+        -- players could have been removed (set to false)
+        if val then 
+            table.insert(players, user)
+        end
+    end
+
+    -- return the list of non-nil players
+    return players
+end
+
+-- the number of players in the current game
+function GambleCore:CurrentNumberOfPlayers() 
+    -- the current list of players
+    local players = GambleCore:CurrentPlayers()
+
+    -- the running total
+    local total = 0
+    -- add one for each player
+    for _ in pairs(players) do
+        total = total + 1
+    end
+
+    return total
+end
+
+-- perform the roll that is pending for the current user
+function GambleCore:Roll()
+    -- the name of the current player
+    local currentPlayer = UnitName("player")
+
+    -- the expected roll of the current player
+    local expected = GambleCore._pendingRolls[currentPlayer]
+
+    -- if the user does not have to roll
+    if expected == nil then
+        -- don't do anything else
+        return
+    end
+
+    -- perform the roll
+    RandomRoll(expected.Min, expected.Max)
+end
+
+
+-- returns true if the current user needs to roll
+function GambleCore:PlayerNeedsToRoll()
+    -- save a reference to the current game
+    local game = GambleCore:CurrentGame()
+    -- if there is no game
+    if not game then
+        -- the user doesn't need to roll
+        return false
+    end
+
+    -- the name of the current player
+    local currentPlayer = UnitName("player")
+
+
+    -- look at each of the pending rolls
+    for player, _ in pairs(GambleCore._pendingRolls) do
+        -- if we found an entry for the current player
+        if player == currentPlayer then
+            return true
+        end
+    end
+
+    -- go through the current game
+    return false
+end
+
+-- return the table of pending rolls
+function GambleCore:PendingRolls()
+    return GambleCore._pendingRolls
+end
+
+-- return the table of recorded rolls
+function GambleCore:RecordedRolls()
+    return GambleCore._rollResults
+end
+
 -- wait for rolls from the specified players
 function GambleCore:CollectSameRoll(players, min, max, onComplete, onError)
     -- only the host can do this
@@ -342,4 +437,7 @@ function GambleCore:CollectSameRoll(players, min, max, onComplete, onError)
             Max = max,
         }
     end
+
+    -- update the UI
+    GambleUI:Refresh()
 end
