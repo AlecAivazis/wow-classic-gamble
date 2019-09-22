@@ -114,23 +114,37 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
     -- add a label for the channel select
     local channelLabel = AceGUI:Create("Label")
     channelLabel:SetText("Channel:")
-    channelLabel:SetFontObject(GameFontHighlightSmall)
-    channelLabel:SetWidth(50)
+    channelLabel:SetFontObject(GameFontHighlightMedium)
+    channelLabel:SetWidth(75)
     container:AddChild(channelLabel)
 
     -- a dropdown to choose the channel to show
     local channelSelect = AceGUI:Create("Dropdown")
     channelSelect:SetList({})
     channelSelect:AddItem(ChannelNames.Say, "Say")
-    channelSelect:AddItem(ChannelNames.Party, "Party")
-    channelSelect:AddItem(ChannelNames.Raid, "Raid")
+    channelSelect:SetValue(ChannelNames.Say)
     channelSelect:SetCallback("OnValueChanged", function (table, event, key)
         -- set the channel config
         GambleCore.channel = key
     end)
-    channelSelect:SetValue(ChannelNames.Raid)
-    channelSelect:SetWidth(150)
+    channelSelect:SetWidth(100)
     container:AddChild(channelSelect)
+
+    -- if the player is in a party
+    if UnitInParty("player") then
+        -- add the raid channel as an option
+        channelSelect:AddItem(ChannelNames.Party, "Party")
+        -- default to that selected
+        channelSelect:SetValue(ChannelNames.Party)
+    end
+
+    -- if the player is in a raid
+    if UnitInRaid("player") then
+        -- add the raid channel as an option
+        channelSelect:AddItem(ChannelNames.Raid, "Raid")
+        -- default to that selected
+        channelSelect:SetValue(ChannelNames.Raid)
+    end
 
     -- some spacing before the game select
     GambleUI:VerticalSpace(container, "small")
