@@ -9,5 +9,6 @@ embeds.xml
 
 src\addon.lua
 
+src\core.lua
 src\ui.lua
 src\cmd.lua

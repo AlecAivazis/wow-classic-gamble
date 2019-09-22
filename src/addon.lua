@@ -5,6 +5,8 @@ GambleAddon = LibStub("AceAddon-3.0"):NewAddon("Gamble", "AceConsole-3.0")
 function GambleAddon:OnEnable()
     -- initialize the frame
     GambleUI.Initialize()
+    -- and the core logic
+    GambleCore:Initialize()
 
     -- register slash commands
     GambleAddon:RegisterChatCommand("gamble", "ParseCmd")

@@ -32,6 +32,10 @@ function GambleUI:Initialize()
         },
     })
     GambleUI.tabs:SetCallback("OnGroupSelected", function (container, event, tabName)
+        -- save a reference to the container in case we need to update it out of band
+        GambleUI._tabFrame = container
+        GambleUI._currentTab = tabName
+        
         -- draw the selected tab
         GambleUI:_drawTab(container, tabName)
     end )
@@ -43,7 +47,7 @@ function GambleUI:Initialize()
     GambleUI.frame:Hide()
 end
 
--- Show shows the UI
+-- Shows the UI
 function GambleUI:Show()
     -- force the play tab to always be open at first
     GambleUI.tabs:SelectTab(TabPlay)
@@ -51,9 +55,14 @@ function GambleUI:Show()
     GambleUI.frame:Show()
 end
 
--- Hide hides the UI
+-- Hides the UI
 function GambleUI:Hide()
     GambleUI.frame:Hide()
+end
+
+-- Refreshes the UI 
+function GambleUI:Refresh()
+    GambleUI:_drawTab(GambleUI._tabFrame, GambleUI._currentTab)
 end
 
 ------------------------------------------------------------
@@ -84,29 +93,52 @@ end
 
 -- invoked when the user wants to draw the play tab
 function GambleUI:_drawPlayTab(container) 
-   -- there is no game currently in progress so we just need to render the options to kick off a new game
-   local head = AceGUI:Create("Heading")
-   head:SetText("Start a Game")
-   head:SetFullWidth(true)
-   container:AddChild(head)
+    -- if there is no current game
+    if not GambleCore.currentGame then 
+        -- render the appropriate state of the playtab
+        GambleUI:_drawPlayTab_noCurrentGame(container)
+    -- otherwise there is a game currently going
+    else
+        -- render the summary of the current game
+        GambleUI:_drawPlayTab_currentGame(container)
+    end
+end
 
-   -- some vertical spacing under the header
-   GambleUI:VerticalSpace(container, "small")
+-- the state of the play tab when there is no game playing
+function GambleUI:_drawPlayTab_noCurrentGame(container)
+    -- there is no game currently in progress so we just need to render the options to kick off a new game
+    local head = AceGUI:Create("Heading")
+    head:SetText("Start a Game")
+    head:SetFullWidth(true)
+    container:AddChild(head)
+    
+    -- some vertical spacing under the header
+    GambleUI:VerticalSpace(container, "small")
 
-   -- add a button for hilo
-   local hiloButton = AceGUI:Create("Button")
-   hiloButton:SetText("HiLo")
-   hiloButton:SetRelativeWidth(0.48)
-   container:AddChild(hiloButton)
+    -- add a button for hilo
+    local hiloButton = AceGUI:Create("Button")
+    hiloButton:SetText("HiLo")
+    hiloButton:SetRelativeWidth(0.48)
+    hiloButton:SetCallback("OnClick", function() GambleCore:StartGame("HiLo") end)
+    container:AddChild(hiloButton)
 
-   -- we need a 10% space between the two
-   GambleUI:HoritzonalSpace(container, 0.04)
+    -- we need a 10% space between the two
+    GambleUI:HoritzonalSpace(container, 0.04)
 
-   -- add a button for big twos
-   local bigTwosButton = AceGUI:Create("Button")
-   bigTwosButton:SetText("Big Twos")
-   bigTwosButton:SetRelativeWidth(0.48)
-   container:AddChild(bigTwosButton)
+    -- add a button for big twos
+    local bigTwosButton = AceGUI:Create("Button")
+    bigTwosButton:SetText("Big Twos")
+    bigTwosButton:SetCallback("OnClick", function() GambleCore:StartGame("Big Twos") end)
+    bigTwosButton:SetRelativeWidth(0.48)
+    container:AddChild(bigTwosButton)
+end
+
+function GambleUI:_drawPlayTab_currentGame(container) 
+    -- for now just tell them its coming
+    local content = AceGUI:Create("Label")
+    content:SetText("theres a game going!")
+
+    container:AddChild(content)
 end
 
 -- invoked when the user wants to draw the history tab
