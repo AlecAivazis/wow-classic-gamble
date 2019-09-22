@@ -241,6 +241,16 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
         finalizeButton:SetRelativeWidth(0.32)
         finalizeButton:SetCallback("OnClick", function() GambleCore:BeginGame() end)
         container:AddChild(finalizeButton)
+        
+        -- some spacing between the buttons
+        GambleUI:HoritzonalSpace(container, 0.01)
+    
+        -- a button to explain the current game
+        local explainButton = AceGUI:Create("Button")
+        explainButton:SetText("Explain")
+        explainButton:SetRelativeWidth(0.32)
+        explainButton:SetCallback("OnClick", function() GambleCore:Explain() end)
+        container:AddChild(explainButton)
 
         -- some more spacing
         GambleUI:VerticalSpace(container, "small")
@@ -272,16 +282,6 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
         leaveButton:SetCallback("OnClick", function() GambleCore:LeaveCurrentGame() end)
         container:AddChild(leaveButton)
     end
-        
-    -- some spacing between the buttons
-    GambleUI:HoritzonalSpace(container, 0.01)
-
-    -- a button to explain the current game
-    local explainButton = AceGUI:Create("Button")
-    explainButton:SetText("Explain")
-    explainButton:SetRelativeWidth(0.32)
-    explainButton:SetCallback("OnClick", function() GambleCore:Explain() end)
-    container:AddChild(explainButton)
 
     -- some more spacing
     GambleUI:VerticalSpace(container, "small")
