@@ -1,8 +1,18 @@
 -- externals
 local AceEvent = LibStub("AceEvent-3.0")
 
+-- channel enum values
+ChannelNames = {
+    Raid = "raid",
+    Party = "party",
+    Say = "say",
+}
+
 -- a namspace for the api
-GambleCore = {}
+GambleCore = {
+    -- the channel that messages have to come in on 
+    channel = ChannelNames.Raid
+}
 
 -- the current game (if there is one)
 local currentGame = nil
@@ -12,9 +22,9 @@ function GambleCore:Initialize()
     -- listen for the following events:
 
     -- social messages
-    AceEvent:RegisterEvent("CHAT_MSG_SAY", function (...) GambleCore:onSocialMessage(...) end)
-    AceEvent:RegisterEvent("CHAT_MSG_PARTY", function (...) GambleCore:onSocialMessage(...) end)
-    AceEvent:RegisterEvent("CHAT_MSG_RAID", function (...) GambleCore:onSocialMessage(...) end)
+    AceEvent:RegisterEvent("CHAT_MSG_SAY", function (...) GambleCore:onSocialMessage(ChannelNames.Say, ...) end)
+    AceEvent:RegisterEvent("CHAT_MSG_PARTY", function (...) GambleCore:onSocialMessage(ChannelNames.Party, ...) end)
+    AceEvent:RegisterEvent("CHAT_MSG_RAID", function (...) GambleCore:onSocialMessage(ChannelNames.Raid, ...) end)
 
     -- system messages (aka rolls)
     AceEvent:RegisterEvent("CHAT_MSG_SYSTEM", function (...) GambleCore:onSystemMessage(...) end)
@@ -55,20 +65,20 @@ end
 ------------------------------------------------------------
 
 -- invoked when there is a social message
-function GambleCore:onSocialMessage(type, message, playerName)
-    -- if the current user is not the host of a game
-    if not GambleCore:IsHosting() then
+function GambleCore:onSocialMessage(channel, type, message, author)
+    -- if the message is on the wrong channel or the current user is not the host of a game 
+    if not channel == GambleCore.channel or not GambleCore:IsHosting() then
         -- there's nothing to do
         return
     end
 
+    -- get the name of the player
+    playerName = string.gmatch(author, "(%w+)-(%w+)")()
+
     -- if the message is the entry message then the user wants to join the current game
     if message == "1" then
-        -- get the name of the player
-        name = string.gmatch(playerName, "(%w+)-(%w+)")()
-        
         -- add it to the list of players
-        currentGame.players[name] = true
+        currentGame.players[playerName] = true
 
         -- update the ui
         GambleUI:Refresh()

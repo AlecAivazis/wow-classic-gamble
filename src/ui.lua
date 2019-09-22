@@ -108,6 +108,33 @@ end
 
 -- the state of the play tab when there is no game playing
 function GambleUI:_drawPlayTab_noCurrentGame(container)
+    -- some spacing before the channel select
+    GambleUI:VerticalSpace(container, "small")
+
+    -- add a label for the channel select
+    local channelLabel = AceGUI:Create("Label")
+    channelLabel:SetText("Channel:")
+    channelLabel:SetFontObject(GameFontHighlightSmall)
+    channelLabel:SetWidth(50)
+    container:AddChild(channelLabel)
+
+    -- a dropdown to choose the channel to show
+    local channelSelect = AceGUI:Create("Dropdown")
+    channelSelect:SetList({})
+    channelSelect:AddItem(ChannelNames.Say, "Say")
+    channelSelect:AddItem(ChannelNames.Party, "Party")
+    channelSelect:AddItem(ChannelNames.Raid, "Raid")
+    channelSelect:SetCallback("OnValueChanged", function (table, event, key)
+        -- set the channel config
+        GambleCore.channel = key
+    end)
+    channelSelect:SetValue(ChannelNames.Raid)
+    channelSelect:SetWidth(150)
+    container:AddChild(channelSelect)
+
+    -- some spacing before the game select
+    GambleUI:VerticalSpace(container, "small")
+    
     -- there is no game currently in progress so we just need to render the options to kick off a new game
     local head = AceGUI:Create("Heading")
     head:SetText("Start a Game")
@@ -169,7 +196,7 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
         -- a button to explain the current game
         local cancelButton = AceGUI:Create("Button")
         cancelButton:SetText("Cancel Game")
-        cancelButton:SetRelativeWidth(0.3)
+        cancelButton:SetRelativeWidth(0.32)
         cancelButton:SetCallback("OnClick", function() GambleCore:CancelGame() end)
         container:AddChild(cancelButton)
         
@@ -179,7 +206,7 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
         -- a button to finalize the current game
         local finalizeButton = AceGUI:Create("Button")
         finalizeButton:SetText("Begin Game")
-        finalizeButton:SetRelativeWidth(0.3)
+        finalizeButton:SetRelativeWidth(0.32)
         finalizeButton:SetCallback("OnClick", function() GambleCore:BeginGame() end)
         container:AddChild(finalizeButton)
         
@@ -189,7 +216,7 @@ function GambleUI:_drawPlayTab_acceptingInvites(container)
         -- a button to explain the current game
         local explainButton = AceGUI:Create("Button")
         explainButton:SetText("Explain")
-        explainButton:SetRelativeWidth(0.3)
+        explainButton:SetRelativeWidth(0.32)
         explainButton:SetCallback("OnClick", function() GambleCore:Explain() end)
         container:AddChild(explainButton)
     end 
