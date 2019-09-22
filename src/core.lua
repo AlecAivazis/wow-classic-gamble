@@ -25,7 +25,7 @@ GambleCore = {
 
 -- the message that indicates a user wants to join
 JoinMessage = "1"
-LeaveMessage = "imabitchnevermind"
+LeaveMessage = "imacowardnevermind"
 ExplainMessage = "explain"
 
 -- the default delay on last call
