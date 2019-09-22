@@ -374,6 +374,52 @@ function GambleUI:_drawPlayTab_rolling(container)
         -- some more spacing
         GambleUI:VerticalSpace(container, "small")
     end
+
+    -- if there is at least one result
+    if GambleCore:NumberOfRollResults() > 0 then
+        -- add a section with the roll results
+        local resultsHeader = AceGUI:Create("Heading")
+        resultsHeader:SetText("Results")
+        resultsHeader:SetFullWidth(true)
+        container:AddChild(resultsHeader)
+
+        -- each roll result gets its own line
+        for user, result in pairs(GambleCore:RollResults()) do
+            local playerScore = AceGUI:Create("Label")
+            playerScore:SetFullWidth(true)
+            playerScore:SetFontObject(GameFontHighlightMedium)
+            playerScore:SetText(user .. " -> " .. result)
+            container:AddChild(playerScore)
+
+        end
+
+        -- some more spacing
+        GambleUI:VerticalSpace(container, "small")
+    end
+
+    -- if there is at least one pending roll
+    if GambleCore:NumberOfPendingRolls() > 0 then
+        -- and a section with the people have have yet to roll
+        local resultsHeader = AceGUI:Create("Heading")
+        resultsHeader:SetText("Pending Rolls")
+        resultsHeader:SetFullWidth(true)
+        container:AddChild(resultsHeader)
+        
+        -- the list of users that have to roll
+        local playersBody = AceGUI:Create("Label")
+        playersBody:SetFullWidth(true)
+        playersBody:SetFontObject(GameFontHighlightMedium)
+        container:AddChild(playersBody)
+
+        -- compute the actual players text
+        local players = ""
+        for user in pairs(GambleCore:PendingRolls()) do
+            players = players .. user .. ", "
+        end
+        -- update the body of the element
+        playersBody:SetText(players:sub(0, -3))
+    end
+
 end
 
 -- invoked when the user wants to draw the history tab

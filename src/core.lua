@@ -400,9 +400,31 @@ function GambleCore:PendingRolls()
     return GambleCore._pendingRolls
 end
 
+function GambleCore:NumberOfPendingRolls()
+    -- the running total
+    local total = 0
+    -- add one for each 
+    for _ in pairs(GambleCore:PendingRolls()) do
+        total = total + 1
+    end
+
+    return total
+end
+
 -- return the table of recorded rolls
-function GambleCore:RecordedRolls()
+function GambleCore:RollResults()
     return GambleCore._rollResults
+end
+
+function GambleCore:NumberOfRollResults()
+    -- the running total
+    local total = 0
+    -- add one for each 
+    for _ in pairs(GambleCore:RollResults()) do
+        total = total + 1
+    end
+
+    return total
 end
 
 -- wait for rolls from the specified players
@@ -411,7 +433,6 @@ function GambleCore:CollectSameRoll(players, min, max, onComplete, onError)
     if not GambleCore:IsHosting() then
         return
     end
-
 
     -- build up the list of pending rolls
     GambleCore._pendingRolls = {}
