@@ -32,9 +32,6 @@ function GambleUI:Initialize()
         },
     })
     GambleUI.tabs:SetCallback("OnGroupSelected", function (container, event, tabName)
-        -- clear the contents of the tab container
-        container:ReleaseChildren()
-
         -- draw the selected tab
         GambleUI:_drawTab(container, tabName)
     end )
@@ -65,11 +62,15 @@ end
 
 -- draw the tab
 function GambleUI:_drawTab(container, which)
+    -- clear the contents of the tab container before we do anything else
+    container:ReleaseChildren()
+
+    -- make sure the container is the right size
     container:SetLayout("Fill")
 
-    
+    -- we will embed each tab in a scroll frame to handle overflow globally
     scrollContainer = AceGUI:Create("ScrollFrame")
-    scrollContainer:SetLayout("Flow") -- probably?
+    scrollContainer:SetLayout("Flow")
     container:AddChild(scrollContainer)
     
     -- if the user is showing the play tab
