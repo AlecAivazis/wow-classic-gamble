@@ -245,7 +245,7 @@ function GambleCore:onSystemMessage(type, text)
     if (min ~= expected.Min) or (max ~= expected.Max) then
         -- there was a roll mismatch so we need to whisper the player and ask them to re-roll
         local message = "Sorry, that roll has the incorrect bounds. Please roll again "
-                        .. "with the correct bounds by typing /roll " .. expected.Min .. " " .. expected.Max
+                        .. " by typing /roll " .. expected.Min .. " " .. expected.Max
                     
         -- send them back the current game's explaination
         SendChatMessage(message , "WHISPER" , nil , player)
