@@ -4,8 +4,10 @@ local AceGUI = LibStub("AceGUI-3.0")
 GambleUI = {}
 
 -- tab name constants
-local TabPlay = "play"
-local TabHistory = "history"
+local TabNames = {
+    Play = "play",
+    History = "history",
+}
 
 function GambleUI:Initialize()
     -- create the root frame
@@ -16,7 +18,7 @@ function GambleUI:Initialize()
     GambleUI.frame:SetStatusText("v0.0.0")
     GambleUI.frame:SetLayout("Fill")
     GambleUI.frame:SetWidth(400)
-    GambleUI.frame:SetHeight(300)
+    GambleUI.frame:SetHeight(400)
 
     -- create the tab group at the root of the UI
     GambleUI.tabs = AceGUI:Create("TabGroup")
@@ -24,11 +26,11 @@ function GambleUI:Initialize()
     GambleUI.tabs:SetTabs({
         {
             text = "Play",
-            value=TabPlay
+            value=TabNames.Play
         },
         {
             text = "History",
-            value=TabHistory
+            value=TabNames.History
         },
     })
     GambleUI.tabs:SetCallback("OnGroupSelected", function (container, event, tabName)
@@ -39,7 +41,7 @@ function GambleUI:Initialize()
         -- draw the selected tab
         GambleUI:_drawTab(container, tabName)
     end )
-    GambleUI.tabs:SelectTab(TabPlay)
+    GambleUI.tabs:SelectTab(TabNames.Play)
     -- add the select to the frame
     GambleUI.frame:AddChild(GambleUI.tabs)
 
@@ -50,7 +52,7 @@ end
 -- Shows the UI
 function GambleUI:Show()
     -- force the play tab to always be open at first
-    GambleUI.tabs:SelectTab(TabPlay)
+    GambleUI.tabs:SelectTab(TabNames.Play)
 
     GambleUI.frame:Show()
 end
@@ -83,10 +85,10 @@ function GambleUI:_drawTab(container, which)
     container:AddChild(scrollContainer)
 
     -- if the user is showing the play tab
-    if which == TabPlay then
+    if which == TabNames.Play then
         GambleUI:_drawPlayTab(scrollContainer)
     -- otherwise they could be showing the history tab
-    elseif which == TabHistory then
+    elseif which == TabNames.History then
         GambleUI:_drawHistoryTab(scrollContainer)
     end
 end
@@ -100,7 +102,7 @@ function GambleUI:_drawPlayTab(container)
     -- otherwise there is a game currently going
     else
         -- render the summary of the current game
-        GambleUI:_drawPlayTab_currentGame(container)
+        GambleUI:_drawPlayTab_acceptingInvites(container)
     end
 end
 
@@ -133,7 +135,7 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
     container:AddChild(bigTwosButton)
 end
 
-function GambleUI:_drawPlayTab_currentGame(container)
+function GambleUI:_drawPlayTab_acceptingInvites(container)
     -- save a reference to the current game
     local game = GambleCore:CurrentGame()
 
@@ -148,16 +150,61 @@ function GambleUI:_drawPlayTab_currentGame(container)
     container:AddChild(nowPlayingHeader)
 
     -- list who the dealer is
-    local dealerHeader = AceGUI:Create("Label")
-    dealerHeader:SetText("Dealer: " .. game.creator)
-    dealerHeader:SetFontObject(GameFontHighlightMedium)
-    container:AddChild(dealerHeader)
+    local hostLabel = AceGUI:Create("Label")
+    hostLabel:SetText("Host: " .. game.creator)
+    hostLabel:SetFontObject(GameFontHighlightMedium)
+    container:AddChild(hostLabel)
 
     -- some more spacing
     GambleUI:VerticalSpace(container, "small")
 
-    -- list the people who have entered
+    -- if the current user is the dealer
+    if GambleCore:IsHosting() then
+        -- add a commands section the host can use to officiate
+        local hostHeader = AceGUI:Create("Heading")
+        hostHeader:SetText("Host Commands")
+        hostHeader:SetFullWidth(true)
+        container:AddChild(hostHeader)
 
+        -- a button to finalize the current game
+        local finalizeButton = AceGUI:Create("Button")
+        finalizeButton:SetText("Begin Game")
+        finalizeButton:SetRelativeWidth(0.3)
+        finalizeButton:SetCallback("OnClick", function() GambleCore:BeginGame() end)
+        container:AddChild(finalizeButton)
+        
+        -- some spacing between the buttons
+        GambleUI:HoritzonalSpace(container, 0.01)
+
+        -- a button to explain the current game
+        local explainButton = AceGUI:Create("Button")
+        explainButton:SetText("Explain")
+        explainButton:SetRelativeWidth(0.3)
+        explainButton:SetCallback("OnClick", function() GambleCore:ExplainA() end)
+        container:AddChild(explainButton)
+    end 
+
+    -- some more spacing
+    GambleUI:VerticalSpace(container, "small")
+
+    -- a heading for the list the people who have entered
+    local playersHeader = AceGUI:Create("Heading")
+    playersHeader:SetText("Players")
+    playersHeader:SetFullWidth(true)
+    container:AddChild(playersHeader)
+
+    -- the list of users that have entered the game
+    local playersBody = AceGUI:Create("Label")
+    playersBody:SetFullWidth(true)
+    playersBody:SetFontObject(GameFontHighlightMedium)
+    container:AddChild(playersBody)
+    -- compute the actual players text
+    local players = ""
+    for user, _ in pairs(game.players) do
+        players = players .. user .. ", "
+    end
+    -- update the body of the element
+    playersBody:SetText(players:sub(0, -3))
 end
 
 -- invoked when the user wants to draw the history tab
