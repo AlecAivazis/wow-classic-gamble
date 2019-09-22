@@ -245,10 +245,20 @@ function GambleCore:onSystemMessage(type, text)
     if (min ~= expected.Min) or (max ~= expected.Max) then
         -- there was a roll mismatch so we need to whisper the player and ask them to re-roll
         local message = "Sorry, that roll has the incorrect bounds. Please roll again "
-                        .. " by typing /roll " .. expected.Min .. " " .. expected.Max
+                        .. " by typing /roll " 
+
+        -- if the lower bound is one, its optional
+        if expected.Min ~= 1 then
+            message = message .. expected.Min .. " "
+        end
+
+        -- the upper bound is always required
+        message = message .. expected.Max
                     
         -- send them back the current game's explaination
         SendChatMessage(message , "WHISPER" , nil , player)
+
+        -- we're done processing the roll
         return
     end
 
@@ -258,6 +268,12 @@ function GambleCore:onSystemMessage(type, text)
     GambleCore._pendingRolls[player] = nil
     -- decrement the count of pending rolls
     GambleCore._pendingRollsCount = GambleCore._pendingRollsCount - 1
+
+    -- if the number of pending rolls is zero
+    if GambleCore._pendingRollsCount == 0 and GambleCore._pendingRollCompleteCallback ~= nil then
+        -- we can invoke the roll callback handler with the results
+        GambleCore._pendingRollCompleteCallback(GambleCore._rollResults)
+    end
 end
 
 -- when a whisper is recieved
@@ -307,16 +323,14 @@ function GambleCore:CollectSameRoll(players, min, max, onComplete, onError)
     GambleCore._rollResults = {}
     GambleCore._pendingRollsCount = table.getn(players)
 
-    print(GambleCore._pendingRollsCount)
-
     -- if we were given an on complete callback
-    if not onComplete == nil then 
+    if onComplete ~= nil then 
         -- save it
         GambleCore._pendingRollCompleteCallback = onComplete
     end
 
     -- if we were given an onError callback
-    if not onError == nil then
+    if onError ~= nil then
         GambleCore._pendingRollErrorCallback = onError
     end
 
