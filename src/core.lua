@@ -58,9 +58,11 @@ function GambleCore:StartGame(type)
     }
     
     -- tell everyone what's going on
-    GambleCore:Say("Now starting a game of " .. rules.Name 
-                    .. "! Type " .. JoinMessage .. " in this channel to join. If you don't know how to play, you can whisper me \"" 
-                    .. ExplainMessage .. "\" for an explanation.")
+    GambleCore:Say(
+        "Now starting a game of " .. rules.Name .. "! Type " .. JoinMessage 
+        .. " in this channel to join. If you don't know how to play, you can whisper me \"" 
+        .. ExplainMessage .. "\" for help."
+    )
 
     -- redraw the UI
     GambleUI:Refresh()
