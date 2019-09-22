@@ -35,13 +35,8 @@ function GambleUI:Initialize()
         -- clear the contents of the tab container
         container:ReleaseChildren()
 
-        -- if the user is showing the play tab
-        if tabName == TabPlay then
-            GambleUI:_drawPlayTab(container)
-        -- otherwise they could be showing the history tab
-        elseif tabName == TabHistory then 
-            GambleUI:_drawHistoryTab(container)
-        end
+        -- draw the selected tab
+        GambleUI:_drawTab(container, tabName)
     end )
     GambleUI.tabs:SelectTab(TabPlay)
     -- add the select to the frame
@@ -55,7 +50,7 @@ end
 function GambleUI:Show()
     -- force the play tab to always be open at first
     GambleUI.tabs:SelectTab(TabPlay)
-    
+
     GambleUI.frame:Show()
 end
 
@@ -64,13 +59,100 @@ function GambleUI:Hide()
     GambleUI.frame:Hide()
 end
 
+------------------------------------------------------------
+-- Tabs
+------------------------------------------------------------
+
+-- draw the tab
+function GambleUI:_drawTab(container, which)
+    container:SetLayout("Fill")
+
+    
+    scrollContainer = AceGUI:Create("ScrollFrame")
+    scrollContainer:SetLayout("Flow") -- probably?
+    container:AddChild(scrollContainer)
+    
+    -- if the user is showing the play tab
+    if which == TabPlay then
+        GambleUI:_drawPlayTab(scrollContainer)
+    -- otherwise they could be showing the history tab
+    elseif which == TabHistory then 
+        GambleUI:_drawHistoryTab(scrollContainer)
+    end
+end
 
 -- invoked when the user wants to draw the play tab
 function GambleUI:_drawPlayTab(container) 
+   -- there is no game currently in progress so we just need to render the options to kick off a new game
+   local head = AceGUI:Create("Heading")
+   head:SetText("Start a Game")
+   head:SetFullWidth(true)
+   container:AddChild(head)
 
+   -- some vertical spacing under the header
+   GambleUI:VerticalSpace(container, "small")
+
+   -- add a button for hilo
+   local hiloButton = AceGUI:Create("Button")
+   hiloButton:SetText("HiLo")
+   hiloButton:SetRelativeWidth(0.48)
+   container:AddChild(hiloButton)
+
+   -- we need a 10% space between the two
+   GambleUI:HoritzonalSpace(container, 0.04)
+
+   -- add a button for big twos
+   local bigTwosButton = AceGUI:Create("Button")
+   bigTwosButton:SetText("Big Twos")
+   bigTwosButton:SetRelativeWidth(0.48)
+   container:AddChild(bigTwosButton)
 end
 
 -- invoked when the user wants to draw the history tab
 function GambleUI:_drawHistoryTab(container)
+    -- for now just tell them its coming
+    local content = AceGUI:Create("Label")
+    content:SetText("Coming soon!")
 
+    container:AddChild(content)
+end
+
+
+------------------------------------------------------------
+-- Drawing Utils
+------------------------------------------------------------
+
+-- HorizontalSpace adds a space in the UI that is the designated relative width
+function GambleUI:HoritzonalSpace(container, width)
+    -- a spacer is really just an empty label
+    local spacer = AceGUI:Create("Label")
+    spacer:SetText(" ")
+    spacer:SetFontObject(GameFontHighlight)
+
+    -- with the designated relative width
+    spacer:SetRelativeWidth(width)
+
+    -- add the label to the container
+    container:AddChild(spacer)
+end
+
+-- VerticalSpace adds a vertical spacing in the UI that can be one of three sizes "small", "medium", and "large".
+-- the default value is "medium"
+function GambleUI:VerticalSpace(container, size)
+    -- a spacer is really just an empty label
+    local spacer = AceGUI:Create("Label")
+    spacer:SetText(" ")
+    spacer:SetFullWidth(true)
+
+    -- the font size depends on the amount of vertical space requested
+    if  size == "large" then
+        spacer:SetFontObject(GameFontHighlightLarge)
+    elseif size == "small" then
+        spacer:SetFontObject(GameFontHighlightSmall)
+    else
+        spacer:SetFontObject(GameFontHighlight)
+    end
+
+    -- add the label to the container
+    container:AddChild(spacer)
 end
