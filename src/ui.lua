@@ -121,7 +121,7 @@ function GambleUI:_drawPlayTab(container)
     
         -- list who the dealer is
         local hostLabel = AceGUI:Create("Label")
-        hostLabel:SetText("Host: " .. game.creator)
+        hostLabel:SetText("Host: " .. game.host)
         hostLabel:SetFontObject(GameFontHighlightMedium)
         container:AddChild(hostLabel)
     
@@ -143,44 +143,6 @@ end
 
 -- the state of the play tab when there is no game playing
 function GambleUI:_drawPlayTab_noCurrentGame(container)
-    -- some spacing before the channel select
-    GambleUI:VerticalSpace(container, "small")
-
-    -- add a label for the channel select
-    local channelLabel = AceGUI:Create("Label")
-    channelLabel:SetText("Channel:")
-    channelLabel:SetFontObject(GameFontHighlightMedium)
-    channelLabel:SetWidth(75)
-    container:AddChild(channelLabel)
-
-    -- a dropdown to choose the channel to show
-    local channelSelect = AceGUI:Create("Dropdown")
-    channelSelect:SetList({})
-    channelSelect:SetCallback("OnValueChanged", function (table, event, key)
-        -- set the channel config
-        GambleCore.channel = key
-    end)
-    channelSelect:SetWidth(100)
-    container:AddChild(channelSelect)
-
-    -- add the raid channel as an option
-    channelSelect:AddItem(ChannelNames.Party, "Party")
-    -- default to that selected
-    channelSelect:SetValue(ChannelNames.Party)
-    -- update the initial state
-    GambleCore.channel = ChannelNames.Party
-
-    -- if the player is in a raid
-    if UnitInRaid("player") then
-        -- add the raid channel as an option
-        channelSelect:AddItem(ChannelNames.Raid, "Raid")
-        -- default to that selected
-        channelSelect:SetValue(ChannelNames.Raid)
-        -- update the initial state
-        GambleCore.channel = ChannelNames.Raid
-    end
-
-    -- some spacing before the game select
     GambleUI:VerticalSpace(container, "small")
     
     -- there is no game currently in progress so we just need to render the options to kick off a new game
@@ -426,7 +388,8 @@ function GambleUI:_drawPlayTab_results(container)
     -- the name of the winner
     local content = AceGUI:Create("Label")
     content:SetFontObject(GameFontHighlightLarge)
-    content:SetText(result.winner.name .. " won with a " .. result.winner.value .. "!")
+    content:SetFullWidth(true)
+    content:SetText(result.winner.name .. " won " .. result.amount .." with a roll of " .. result.winner.value .. "!")
     container:AddChild(content)
 
     -- some spacing
@@ -437,8 +400,7 @@ function GambleUI:_drawPlayTab_results(container)
     content:SetFullWidth(true)
     content:SetFontObject(GameFontHighlightLarge)
     content:SetText(
-        result.loser.name .. " rolled a " .. result.loser.value ..  
-        " and owes " .. result.winner.name .. " " .. result.amount .. "."
+        result.loser.name .. " lost with their roll of " .. result.loser.value ..  "."
     )
 
     container:AddChild(content)

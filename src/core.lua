@@ -1,12 +1,7 @@
 -- externals
 local AceEvent = LibStub("AceEvent-3.0")
-
--- channel enum values
-ChannelNames = {
-    Raid = "RAID",
-    Party = "PARTY",
-}
-
+local AceComm = LibStub("AceComm-3.0")
+local AceSerializer = LibStub("AceSerializer-3.0")
 -- a game transitions between three distinct phases
 GamePhase = {
     GatheringPlayers = "accepting",
@@ -14,10 +9,17 @@ GamePhase = {
     Results = "results",
 }
 
+-- the comm events used between instances of Gamble
+CommEvents = {
+    NewPhase = "Gamble_PHASE",
+    NewGame = "Gamble_GAME",
+    PendingRolls = "Gamble_ROLLS",
+    GameOver = "Gamble_GAME_OVR",
+    Cancel = "Gamble_Cancel"
+}
+
 -- a namspace for the api
 GambleCore = {
-    -- the channel that messages have to come in on 
-    channel = ChannelNames.Party,
     -- players with pending rolls
     _pendingRolls = {},
 }
@@ -38,10 +40,17 @@ function GambleCore:Initialize()
     -- listen for the following events:
 
     -- social messages
-    AceEvent:RegisterEvent("CHAT_MSG_PARTY", function (...) GambleCore:onSocialMessage(ChannelNames.Party, ...) end)
-    AceEvent:RegisterEvent("CHAT_MSG_PARTY_LEADER", function (...) GambleCore:onSocialMessage(ChannelNames.Party, ...) end)
-    AceEvent:RegisterEvent("CHAT_MSG_RAID", function (...) GambleCore:onSocialMessage(ChannelNames.Raid, ...) end)
-    AceEvent:RegisterEvent("CHAT_MSG_RAID_LEADER", function (...) GambleCore:onSocialMessage(ChannelNames.Party, ...) end)
+    AceEvent:RegisterEvent("CHAT_MSG_PARTY", function (...) GambleCore:onSocialMessage(...) end)
+    AceEvent:RegisterEvent("CHAT_MSG_PARTY_LEADER", function (...) GambleCore:onSocialMessage(...) end)
+    AceEvent:RegisterEvent("CHAT_MSG_RAID", function (...) GambleCore:onSocialMessage(...) end)
+    AceEvent:RegisterEvent("CHAT_MSG_RAID_LEADER", function (...) GambleCore:onSocialMessage(...) end)
+
+    -- addon communication channels
+    AceComm:RegisterComm(CommEvents.NewGame, function (...) GambleCore:onCommNewGame(...) end)
+    AceComm:RegisterComm(CommEvents.PendingRolls, function (...) GambleCore:onCommPendingRolls(...) end)
+    AceComm:RegisterComm(CommEvents.NewPhase, function (...) GambleCore:onCommNewPhase(...) end)
+    AceComm:RegisterComm(CommEvents.GameOver, function (...) GambleCore:onCommGameOver(...) end)
+    AceComm:RegisterComm(CommEvents.Cancel, function (...) GambleCore:onCommCancel(...) end)
 
     -- whispers can be for explanation while a game is accepting invites
     AceEvent:RegisterEvent("CHAT_MSG_WHISPER", function (...) GambleCore:onWhisper(...) end)
@@ -57,6 +66,25 @@ end
 
 -- used to start a game between this and all listening instances of Gamble
 function GambleCore:NewGame(type)
+    -- create a new game of the appropriate type and channel with the current user
+    -- as the host
+    GambleCore:_newGame(type, UnitName("player"))
+    
+    -- tell everyone what's going on
+    GambleCore:Say(
+        "Now playing " .. currentGame.rules.Name .. "! Type " .. JoinMessage 
+        .. " in this channel to join. If you don't know how to play, you can whisper me \"" 
+        .. ExplainMessage .. "\" for help."
+    )
+
+    -- notify other open clients
+    AceComm:SendCommMessage(CommEvents.NewGame, type, "RAID")
+
+    -- redraw the UI
+    GambleUI:Refresh()
+end
+
+function GambleCore:_newGame(type, host)
     -- the rules to use
     local rules = Games[type]
     -- if we don't recnogize the type
@@ -68,22 +96,11 @@ function GambleCore:NewGame(type)
     -- initialize a new game table of the appropriate kind
     currentGame = {
         kind = type,
-        creator = UnitName("player"),
-        channel = GambleCore.channel,
+        host = host,
         rules = rules,
         players = {},
         phase = GamePhase.GatheringPlayers,
     }
-    
-    -- tell everyone what's going on
-    GambleCore:Say(
-        "Now playing " .. rules.Name .. "! Type " .. JoinMessage 
-        .. " in this channel to join. If you don't know how to play, you can whisper me \"" 
-        .. ExplainMessage .. "\" for help."
-    )
-
-    -- redraw the UI
-    GambleUI:Refresh()
 end
 
 
@@ -100,6 +117,7 @@ function GambleCore:CancelGame()
 
     -- clear the current game
     currentGame = nil
+    AceComm:SendCommMessage(CommEvents.Cancel, "anything", "RAID")
 
     -- update the UI
     GambleUI:Refresh()
@@ -154,6 +172,7 @@ function GambleCore:StartGame()
 
         -- we are no longer accepting players
         currentGame.phase = GamePhase.Rolling
+        AceComm:SendCommMessage(CommEvents.NewPhase, GamePhase.Rolling, "RAID")
 
         -- build up a list of the players
         local players = {}
@@ -164,9 +183,6 @@ function GambleCore:StartGame()
 
         -- execute the game
         currentGame.rules.Execute(players)
-
-        -- redraw the UI
-        GambleUI:Refresh()
     end
 
     -- if we have a last call delay
@@ -189,9 +205,9 @@ end
 ------------------------------------------------------------
 
 -- invoked when there is a social message
-function GambleCore:onSocialMessage(channel, type, message, playerID)
-    -- if the message is on the wrong channel or there is no current game
-    if GambleCore:CurrentGame() == nil or channel ~= currentGame.channel  then
+function GambleCore:onSocialMessage(type, message, playerID)
+    -- if there is no current game
+    if GambleCore:CurrentGame() == nil then
         -- there's nothing to do
         return
     end
@@ -216,7 +232,7 @@ end
 -- whenever there is a system message (aka a roll)
 function GambleCore:onSystemMessage(type, text)
     -- if the current user is not the host of a game
-    if not GambleCore:IsHosting() or not GambleUtils:TableHasKeys(GambleCore._pendingRolls) then
+    if GambleCore:CurrentGame() == nil or not GambleUtils:TableHasKeys(GambleCore._pendingRolls) then
         -- there's nothing to do
         return
     end
@@ -238,8 +254,8 @@ function GambleCore:onSystemMessage(type, text)
     local range = GambleUtils:SplitString(string.sub(rangeString, 2, -2), "-")
     local min, max = tonumber(range[1]), tonumber(range[2])
 
-    -- if the bounds of the roll were incorrect
-    if (min ~= expected.Min) or (max ~= expected.Max) then
+    -- if we are the host and responsible for telling someone their roll was wrong
+    if GambleCore:IsHosting() and ((min ~= expected.Min) or (max ~= expected.Max)) then
         -- there was a roll mismatch so we need to whisper the player and ask them to re-roll
         local message = "Sorry, that roll has the incorrect bounds. Please roll again "
                         .. "by typing /roll " 
@@ -266,8 +282,8 @@ function GambleCore:onSystemMessage(type, text)
     -- decrement the count of pending rolls
     GambleCore._pendingRollsCount = GambleCore._pendingRollsCount - 1
 
-    -- if the number of pending rolls is zero
-    if GambleCore._pendingRollsCount == 0 and GambleCore._pendingRollCompleteCallback ~= nil then
+    -- if we are responsible for handling rolls and there are none left
+    if GambleCore:IsHosting() and GambleCore._pendingRollsCount == 0 and GambleCore._pendingRollCompleteCallback ~= nil then
         -- we can invoke the roll callback handler with the results
         GambleCore._pendingRollCompleteCallback(GambleCore._rollResults)
     end
@@ -291,6 +307,102 @@ function GambleCore:onWhisper(type, message, playerID)
     end
 end
 
+
+-- invoked when another addon creates a new game
+function GambleCore:onCommNewGame(eventType, message, channel, author)
+    -- the new game event comes in the form of TYPE
+    local newGameType = message
+
+    -- as long as there isn't a game going now
+    if GambleCore:CurrentGame() == nil or GambleCore:CurrentGame().phase == GamePhase.Results then
+        -- register the new game
+        GambleCore:_newGame(newGameType, author)    
+
+        -- refresh the UI
+        GambleUI:Refresh()
+    end
+end
+
+-- invoked when another addon adds pending rolls
+function GambleCore:onCommPendingRolls(eventType, message, channel, author)
+    -- if the author of the message is not the host
+    if GambleCore:CurrentGame() == nil or author ~= GambleCore:CurrentGame().host then
+        -- ignore this message
+        return
+    end
+
+    -- deserialize the table of pending rolls into the internal state
+    okay, payload = AceSerializer:Deserialize(message)
+    -- if something went wrong
+    if not okay then 
+        print("not okay", rolls, message)
+        -- don't continue
+        return
+    end
+
+    -- update the internal rolls table
+    GambleCore._pendingRolls = payload.rolls
+    GambleCore._rollResults = {}
+    GambleCore._pendingRollsCount = payload.nPlayers
+
+    GambleUI:Refresh()
+end
+
+-- invoked when addon changes the phase
+function GambleCore:onCommNewPhase(eventType, message, channel, author)
+    local currentGame = GambleCore:CurrentGame()
+
+    -- if the author of the message is not the host
+    if currentGame == nil or author ~= currentGame.host then
+        -- ignore this message
+        return
+    end
+
+    -- set the phase
+    currentGame.phase = message
+
+    -- refresh the ui
+    GambleUI:Refresh()
+end
+
+function GambleCore:onCommGameOver(eventType, message, channel, author)
+    local currentGame = GambleCore:CurrentGame()
+
+    -- if the author of the message is not the host
+    if currentGame == nil or author ~= currentGame.host then
+        -- ignore this message
+        return
+    end
+    
+    -- the message is a serialized result object
+    okay, payload = AceSerializer:Deserialize(message)
+    -- if something went wrong
+    if not okay then 
+        print("not okay", rolls, message)
+        -- don't continue
+        return
+    end
+
+    -- call the game over
+    GambleCore:GameOver(payload.winner, payload.loser, payload.amount)
+end
+
+function GambleCore:onCommCancel(eventType, message, channel, author)
+    local currentGame = GambleCore:CurrentGame()
+
+    -- if the author of the message is not the host
+    if currentGame == nil or author ~= currentGame.host then
+        print("not resetting")
+        -- ignore this message
+        return
+    end
+    print("cancel")
+
+    
+    -- just reset the UI
+    GambleCore:Reset()
+end
+
 ------------------------------------------------------------
 -- Utils
 ------------------------------------------------------------
@@ -302,12 +414,22 @@ end
 
 -- return true if the current user is hosting a game
 function GambleCore:IsHosting()
-    return GambleCore:CurrentGame() and GambleCore:CurrentGame().creator == UnitName("player")
+    return GambleCore:CurrentGame() and GambleCore:CurrentGame().host == UnitName("player")
 end
 
 -- sends a message on the appropriate channel for the current game
 function GambleCore:Say(message) 
-    SendChatMessage(message, currentGame.channel)
+    -- default send the message to the party
+    local channel = "PARTY"    
+    
+    -- if the user is in a raid
+    if UnitInRaid("player") then
+        -- then send the message there
+        channel = "RAID"
+    end
+
+    -- send the message to the right channel
+    SendChatMessage(message, channel)
 end
 
 function GambleCore:CurrentPlayers()
@@ -418,7 +540,7 @@ function GambleCore:NumberOfRollResults()
     -- the running total
     local total = 0
     -- add one for each 
-    for _ in pairs(GambleCore:RollResults()) do
+    for _ in pairs(GambleCore:RollResults() or {}) do
         total = total + 1
     end
 
@@ -457,6 +579,12 @@ function GambleCore:CollectSameRoll(players, min, max, onComplete, onError)
         }
     end
 
+    -- send the list of pending rolls
+    AceComm:SendCommMessage(CommEvents.PendingRolls, AceSerializer:Serialize({
+        rolls = GambleCore._pendingRolls,
+        nPlayers = GambleCore._pendingRollsCount,
+    }), "RAID")
+
     -- update the UI
     GambleUI:Refresh()
 end
@@ -475,6 +603,10 @@ function GambleCore:GameOver(winner, loser, amount)
 
     -- render the UI
     GambleUI:Refresh()
+    
+    -- notify other clients
+    AceComm:SendCommMessage(CommEvents.GameOver, AceSerializer:Serialize(currentGame.result), "RAID")
+
 end
 
 function GambleCore:Reset()
