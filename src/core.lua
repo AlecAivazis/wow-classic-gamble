@@ -584,9 +584,6 @@ function GambleCore:CollectSameRoll(players, min, max, onComplete, onError)
         rolls = GambleCore._pendingRolls,
         nPlayers = GambleCore._pendingRollsCount,
     }), "RAID")
-
-    -- update the UI
-    GambleUI:Refresh()
 end
 
 -- used by games to record the final winner, loser, and the amount owed
