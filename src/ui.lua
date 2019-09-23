@@ -157,7 +157,6 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
     local channelSelect = AceGUI:Create("Dropdown")
     channelSelect:SetList({})
     channelSelect:SetCallback("OnValueChanged", function (table, event, key)
-        print("updating channel")
         -- set the channel config
         GambleCore.channel = key
     end)
@@ -432,7 +431,7 @@ function GambleUI:_drawPlayTab_results(container)
     -- the name of the winner
     local content = AceGUI:Create("Label")
     content:SetFontObject(GameFontHighlightLarge)
-    content:SetText(result.winner .. " won!")
+    content:SetText(result.winner.name .. " won with a " .. result.winner.value .. "!")
     container:AddChild(content)
 
     -- some spacing
@@ -441,7 +440,7 @@ function GambleUI:_drawPlayTab_results(container)
     -- a message for the loser
     local content = AceGUI:Create("Label")
     content:SetFontObject(GameFontHighlightLarge)
-    content:SetText(result.loser .. " owes them " .. result.amount .. ".")
+    content:SetText(result.loser.name .. " owes them " .. result.amount .. ".")
     container:AddChild(content)
 
     -- some spacing

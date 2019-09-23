@@ -14,7 +14,7 @@ Games["HiLo"] ={
             -- go over every result
             for player, value in pairs(results) do
                 -- the entry for this paid
-                local record = { name = player, amount = value}
+                local record = { name = player, value = value}
 
                 -- if there is no highest or lowest use this
                 if lowest == nil and highest == nil then
@@ -23,9 +23,9 @@ Games["HiLo"] ={
                 end
 
                 -- if the value is lower than the lowest we've seen
-                if value < lowest.amount then
+                if value < lowest.value then
                     lowest = record
-                elseif value > highest.amount then
+                elseif value > highest.value then
                     highest = record
                 end
             end
@@ -33,13 +33,8 @@ Games["HiLo"] ={
             -- TODO: handle ties
 
             -- the game is over
-            GambleCore:GameOver(highest.name, lowest.name, highest.amount - lowest.amount)
+            GambleCore:GameOver(highest, lowest, highest.value - lowest.value)
             return
         end)
     end,
-}
-
-Games["Big Twos"] = {
-    Name = "Big Twos",
-    Explain = "Some really helpful text",
 }
