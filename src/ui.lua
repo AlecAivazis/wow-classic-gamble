@@ -160,20 +160,15 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
         -- set the channel config
         GambleCore.channel = key
     end)
-    channelSelect:AddItem(ChannelNames.Say, "Say")
-    channelSelect:SetValue(ChannelNames.Say)
     channelSelect:SetWidth(100)
     container:AddChild(channelSelect)
 
-    -- if the player is in a party
-    if UnitInParty("player") then
-        -- add the raid channel as an option
-        channelSelect:AddItem(ChannelNames.Party, "Party")
-        -- default to that selected
-        channelSelect:SetValue(ChannelNames.Party)
-        -- update the initial state
-        GambleCore.channel = ChannelNames.Party
-    end
+    -- add the raid channel as an option
+    channelSelect:AddItem(ChannelNames.Party, "Party")
+    -- default to that selected
+    channelSelect:SetValue(ChannelNames.Party)
+    -- update the initial state
+    GambleCore.channel = ChannelNames.Party
 
     -- if the player is in a raid
     if UnitInRaid("player") then
@@ -439,8 +434,13 @@ function GambleUI:_drawPlayTab_results(container)
 
     -- a message for the loser
     local content = AceGUI:Create("Label")
+    content:SetFullWidth(true)
     content:SetFontObject(GameFontHighlightLarge)
-    content:SetText(result.loser.name .. " owes them " .. result.amount .. ".")
+    content:SetText(
+        result.loser.name .. " rolled a " .. result.loser.value ..  
+        " and owes " .. result.winner.name .. " " .. result.amount .. "."
+    )
+
     container:AddChild(content)
 
     -- some spacing

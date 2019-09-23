@@ -5,7 +5,6 @@ local AceEvent = LibStub("AceEvent-3.0")
 ChannelNames = {
     Raid = "RAID",
     Party = "PARTY",
-    Say = "SAY",
 }
 
 -- a game transitions between three distinct phases
@@ -18,7 +17,7 @@ GamePhase = {
 -- a namspace for the api
 GambleCore = {
     -- the channel that messages have to come in on 
-    channel = ChannelNames.Say,
+    channel = ChannelNames.Party,
     -- players with pending rolls
     _pendingRolls = {},
 }
@@ -39,7 +38,6 @@ function GambleCore:Initialize()
     -- listen for the following events:
 
     -- social messages
-    AceEvent:RegisterEvent("CHAT_MSG_SAY", function (...) GambleCore:onSocialMessage(ChannelNames.Say, ...) end)
     AceEvent:RegisterEvent("CHAT_MSG_PARTY", function (...) GambleCore:onSocialMessage(ChannelNames.Party, ...) end)
     AceEvent:RegisterEvent("CHAT_MSG_PARTY_LEADER", function (...) GambleCore:onSocialMessage(ChannelNames.Party, ...) end)
     AceEvent:RegisterEvent("CHAT_MSG_RAID", function (...) GambleCore:onSocialMessage(ChannelNames.Raid, ...) end)
