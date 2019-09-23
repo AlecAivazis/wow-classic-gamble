@@ -12,7 +12,7 @@ ChannelNames = {
 GamePhase = {
     GatheringPlayers = "accepting",
     Rolling = "rolling",
-    Payout = "payout",
+    Results = "results",
 }
 
 -- a namspace for the api
@@ -58,7 +58,7 @@ end
 ------------------------------------------------------------
 
 -- used to start a game between this and all listening instances of Gamble
-function GambleCore:StartGame(type)
+function GambleCore:NewGame(type)
     -- the rules to use
     local rules = Games[type]
     -- if we don't recnogize the type
@@ -145,7 +145,7 @@ function GambleCore:Explain()
 end
 
 -- invoked when its time to start the game
-function GambleCore:LastCall()
+function GambleCore:StartGame()
     -- the function to call
     function lastCall() 
         -- if the game was canceled since last call
@@ -384,7 +384,7 @@ function GambleCore:PlayerNeedsToRoll()
 
 
     -- look at each of the pending rolls
-    for player, _ in pairs(GambleCore._pendingRolls) do
+    for player, _ in pairs(GambleCore:PendingRolls()) do
         -- if we found an entry for the current player
         if player == currentPlayer then
             return true
@@ -460,5 +460,29 @@ function GambleCore:CollectSameRoll(players, min, max, onComplete, onError)
     end
 
     -- update the UI
+    GambleUI:Refresh()
+end
+
+-- used by games to record the final winner, loser, and the amount owed
+function GambleCore:GameOver(winner, loser, amount)
+    -- record the result
+    currentGame.result = {
+        winner = winner,
+        loser = loser,
+        amount = amount,
+    }
+
+    -- send the UI to the result phase
+    currentGame.phase = GamePhase.Results
+
+    -- render the UI
+    GambleUI:Refresh()
+end
+
+function GambleCore:Reset()
+    -- clear the current game
+    currentGame = nil
+
+    -- refresh the UI
     GambleUI:Refresh()
 end

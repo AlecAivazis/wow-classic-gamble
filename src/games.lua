@@ -7,12 +7,35 @@ Games["HiLo"] ={
     Execute = function (players) 
         -- we have to start by collecting the rolls from every player
         GambleCore:CollectSameRoll(players, 1, 7777, function(results) 
-            print("roll results:")
+            -- the extrema rolls
+            local lowest = nil
+            local highest = nil
 
+            -- go over every result
             for player, value in pairs(results) do
-                print(player .. " rolled " .. value)
+                -- the entry for this paid
+                local record = { name = player, amount = value}
+
+                -- if there is no highest or lowest use this
+                if lowest == nil and highest == nil then
+                    lowest = record
+                    highest = record
+                end
+
+                -- if the value is lower than the lowest we've seen
+                if value < lowest.amount then
+                    lowest = record
+                elseif value > highest.amount then
+                    highest = record
+                end
             end
-        end, nil)
+            
+            -- TODO: handle ties
+
+            -- the game is over
+            GambleCore:GameOver(highest.name, lowest.name, highest.amount - lowest.amount)
+            return
+        end)
     end,
 }
 

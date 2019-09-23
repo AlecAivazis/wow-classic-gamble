@@ -134,6 +134,9 @@ function GambleUI:_drawPlayTab(container)
         -- otherwise the game could be going and rolls being made
         elseif game.phase == GamePhase.Rolling then
             GambleUI:_drawPlayTab_rolling(container)
+        -- or the game could be over
+        elseif game.phase == GamePhase.Results then
+            GambleUI:_drawPlayTab_results(container)
         end
     end
 end
@@ -215,7 +218,7 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
         local button = AceGUI:Create("Button")
         button:SetText(game.Name)
         button:SetRelativeWidth(0.48)
-        button:SetCallback("OnClick", function() GambleCore:StartGame(game.Name) end)
+        button:SetCallback("OnClick", function() GambleCore:NewGame(game.Name) end)
         container:AddChild(button)
 
         -- if the button is in the left column
@@ -268,7 +271,7 @@ function GambleUI:_drawPlayTab_gatheringPlayers(container)
             local finalizeButton = AceGUI:Create("Button")
             finalizeButton:SetText("Begin Game")
             finalizeButton:SetRelativeWidth(0.32)
-            finalizeButton:SetCallback("OnClick", function() GambleCore:LastCall() end)
+            finalizeButton:SetCallback("OnClick", function() GambleCore:StartGame() end)
             container:AddChild(finalizeButton)
         end
         
@@ -419,7 +422,37 @@ function GambleUI:_drawPlayTab_rolling(container)
         -- update the body of the element
         playersBody:SetText(players:sub(0, -3))
     end
+end
 
+
+function GambleUI:_drawPlayTab_results(container)
+    -- the results of the game
+    local result = GambleCore:CurrentGame().result
+
+    -- the name of the winner
+    local content = AceGUI:Create("Label")
+    content:SetFontObject(GameFontHighlightLarge)
+    content:SetText(result.winner .. " won!")
+    container:AddChild(content)
+
+    -- some spacing
+    GambleUI:VerticalSpace(container, "large")
+
+    -- a message for the loser
+    local content = AceGUI:Create("Label")
+    content:SetFontObject(GameFontHighlightLarge)
+    content:SetText(result.loser .. " owes them " .. result.amount .. ".")
+    container:AddChild(content)
+
+    -- some spacing
+    GambleUI:VerticalSpace(container, "large")
+
+    -- a button to play another
+    local continueButton = AceGUI:Create("Button")
+    continueButton:SetText("Play Again!")
+    continueButton:SetRelativeWidth(0.32)
+    continueButton:SetCallback("OnClick", function() GambleCore:Reset() end)
+    container:AddChild(continueButton)
 end
 
 -- invoked when the user wants to draw the history tab
@@ -428,7 +461,6 @@ function GambleUI:_drawHistoryTab(container)
     local content = AceGUI:Create("Label")
     content:SetFontObject(GameFontHighlightLarge)
     content:SetText("Coming soon!")
-
     container:AddChild(content)
 end
 
