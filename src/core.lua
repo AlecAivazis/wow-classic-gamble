@@ -398,11 +398,9 @@ function GambleCore:onCommCancel(eventType, message, channel, author)
 
     -- if the author of the message is not the host
     if currentGame == nil or author ~= currentGame.host then
-        print("not resetting")
         -- ignore this message
         return
     end
-    print("cancel")
 
     
     -- just reset the UI
