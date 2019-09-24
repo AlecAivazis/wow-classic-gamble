@@ -254,8 +254,14 @@ function GambleCore:onSystemMessage(type, text)
     local range = GambleUtils:SplitString(string.sub(rangeString, 2, -2), "-")
     local min, max = tonumber(range[1]), tonumber(range[2])
 
-    -- if we are the host and responsible for telling someone their roll was wrong
-    if GambleCore:IsHosting() and ((min ~= expected.Min) or (max ~= expected.Max)) then
+    -- if the roll was not what we expected
+    if (min ~= expected.Min) or (max ~= expected.Max) then
+        -- if the user is not the host
+        if not GambleCore:IsHosting() then
+            -- ignore the roll
+            return
+        end
+
         -- there was a roll mismatch so we need to whisper the player and ask them to re-roll
         local message = "Sorry, that roll has the incorrect bounds. Please roll again "
                         .. "by typing /roll " 
