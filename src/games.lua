@@ -4,10 +4,10 @@ Games = {}
 Games["HiLo"] ={
     Name = "HiLo",
     Explain = "Some really helpful text",
-    Execute = function (players) 
+    Execute = function (players, maxRisk) 
         -- we have to start by collecting the rolls from every player
-        GambleCore:CollectSameRoll(players, 1, 7777, function(results) 
-            -- the extrema rolls
+        GambleCore:CollectSameRoll(players, 1, maxRisk, function(results) 
+            -- the extreme rolls
             local lowest = nil
             local highest = nil
 

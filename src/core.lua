@@ -65,10 +65,10 @@ end
 ------------------------------------------------------------
 
 -- used to start a game between this and all listening instances of Gamble
-function GambleCore:NewGame(type)
+function GambleCore:NewGame(type, maxRisk)
     -- create a new game of the appropriate type and channel with the current user
     -- as the host
-    GambleCore:_newGame(type, UnitName("player"))
+    GambleCore:_newGame(type, UnitName("player"), maxRisk)
     
     -- tell everyone what's going on
     GambleCore:Say(
@@ -78,13 +78,13 @@ function GambleCore:NewGame(type)
     )
 
     -- notify other open clients
-    AceComm:SendCommMessage(CommEvents.NewGame, type, "RAID")
+    AceComm:SendCommMessage(CommEvents.NewGame, type .. "::" .. maxRisk, "RAID")
 
     -- redraw the UI
     GambleUI:Refresh()
 end
 
-function GambleCore:_newGame(type, host)
+function GambleCore:_newGame(type, host, maxRisk)
     -- the rules to use
     local rules = Games[type]
     -- if we don't recnogize the type
@@ -100,6 +100,7 @@ function GambleCore:_newGame(type, host)
         rules = rules,
         players = {},
         phase = GamePhase.GatheringPlayers,
+        maxRisk = maxRisk,
     }
 end
 
@@ -182,11 +183,11 @@ function GambleCore:StartGame()
         end
 
         -- execute the game
-        currentGame.rules.Execute(players)
+        currentGame.rules.Execute(players, currentGame.maxRisk)
     end
 
     -- if we have a last call delay
-    if LastCallDelay > 0 then 
+    if currentGame.lastCall > 0 then 
         -- before we actually begin the game, lets give some stragglers the ability to catch up
         GambleCore:Say("Last call for players! The game will begin in ".. LastCallDelay .." seconds...")
         
@@ -316,13 +317,15 @@ end
 
 -- invoked when another addon creates a new game
 function GambleCore:onCommNewGame(eventType, message, channel, author)
-    -- the new game event comes in the form of TYPE
-    local newGameType = message
+    -- the new game event comes in the form of TYPE::MAX_RISK
+    local info = GambleUtils:SplitString(message, "::")
+    local gameType = info[0]
+    local maxRisk = info[1]
 
     -- as long as there isn't a game going now
     if GambleCore:CurrentGame() == nil or GambleCore:CurrentGame().phase == GamePhase.Results then
         -- register the new game
-        GambleCore:_newGame(newGameType, author)    
+        GambleCore:_newGame(newGameType, author, maxRisk)    
 
         -- refresh the UI
         GambleUI:Refresh()

@@ -143,7 +143,27 @@ end
 
 -- the state of the play tab when there is no game playing
 function GambleUI:_drawPlayTab_noCurrentGame(container)
+
+    -- show some configuration before the game selection
+    local riskInput = AceGUI:Create("EditBox")
+    riskInput:SetLabel("Maximum Risk")
+    riskInput:SetRelativeWidth(0.45)
+    riskInput:SetText("7777")
+    container:AddChild(riskInput)
+
+    GambleUI:HoritzonalSpace(container, 0.1)
+    
+    -- last call input
+    local lastCallInput = AceGUI:Create("EditBox")
+    lastCallInput:SetLabel("Last Call to Join (in seconds)")
+    lastCallInput:SetRelativeWidth(0.45)
+    lastCallInput:SetText("5")
+    container:AddChild(lastCallInput)
+
+
+    -- some spacing between controls and game type
     GambleUI:VerticalSpace(container, "small")
+
     
     -- there is no game currently in progress so we just need to render the options to kick off a new game
     local head = AceGUI:Create("Heading")
@@ -174,7 +194,7 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
         local button = AceGUI:Create("Button")
         button:SetText(game.Name)
         button:SetRelativeWidth(0.48)
-        button:SetCallback("OnClick", function() GambleCore:NewGame(game.Name) end)
+        button:SetCallback("OnClick", function() GambleCore:NewGame(game.Name, tonumber(riskInput:GetText())) end)
         container:AddChild(button)
 
         -- if the button is in the left column
