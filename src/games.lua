@@ -5,6 +5,9 @@ Games["HiLo"] ={
     Name = "HiLo",
     Explain = "Some really helpful text",
     Execute = function (players, maxRisk) 
+        -- notify people that the game has actually started
+        GambleCore:Say("Okay! Let's begin. Everyone roll a number between 0  and " .. maxRisk .. ".")
+
         -- we have to start by collecting the rolls from every player
         GambleCore:CollectSameRoll(players, 1, maxRisk, function(results) 
             -- the extreme rolls
@@ -32,8 +35,14 @@ Games["HiLo"] ={
             
             -- TODO: handle ties
 
+            -- the amount won
+            local winnings = highest.value - lowest.value
+
+            -- tell everyone what just happend
+            GambleCore:Say(highest.name .. " won! " .. lowest.name .. " owes " .. "them " .. winnings .. ".")
+
             -- the game is over
-            GambleCore:GameOver(highest, lowest, highest.value - lowest.value)
+            GambleCore:GameOver(highest, lowest, winnings)
             return
         end)
     end,
