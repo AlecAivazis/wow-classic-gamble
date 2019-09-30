@@ -29,9 +29,6 @@ JoinMessage = "1"
 LeaveMessage = "imacowardnevermind"
 ExplainMessage = "explain"
 
--- the default delay on last call
-LastCallDelay = 0
-
 -- the current game (if there is one)
 local currentGame = nil
 
@@ -65,10 +62,10 @@ end
 ------------------------------------------------------------
 
 -- used to start a game between this and all listening instances of Gamble
-function GambleCore:NewGame(type, maxRisk)
+function GambleCore:NewGame(type, maxRisk, lastCall)
     -- create a new game of the appropriate type and channel with the current user
     -- as the host
-    GambleCore:_newGame(type, UnitName("player"), maxRisk)
+    GambleCore:_newGame(type, UnitName("player"), maxRisk, lastCall)
     
     -- tell everyone what's going on
     GambleCore:Say(
@@ -84,7 +81,7 @@ function GambleCore:NewGame(type, maxRisk)
     GambleUI:Refresh()
 end
 
-function GambleCore:_newGame(type, host, maxRisk)
+function GambleCore:_newGame(type, host, maxRisk, lastCall)
     -- the rules to use
     local rules = Games[type]
     -- if we don't recnogize the type
@@ -101,6 +98,7 @@ function GambleCore:_newGame(type, host, maxRisk)
         players = {},
         phase = GamePhase.GatheringPlayers,
         maxRisk = maxRisk,
+        lastCall = lastCall,
     }
 end
 
@@ -189,10 +187,10 @@ function GambleCore:StartGame()
     -- if we have a last call delay
     if currentGame.lastCall > 0 then 
         -- before we actually begin the game, lets give some stragglers the ability to catch up
-        GambleCore:Say("Last call for players! The game will begin in ".. LastCallDelay .." seconds...")
+        GambleCore:Say("Last call for players! The game will begin in ".. currentGame.lastCall .." seconds...")
         
         -- start the game
-        GambleUtils:Delay(LastCallDelay, lastCall)
+        GambleUtils:Delay(currentGame.lastCall, lastCall)
     -- there is no last call delay
     else
         -- just start the game
@@ -319,13 +317,13 @@ end
 function GambleCore:onCommNewGame(eventType, message, channel, author)
     -- the new game event comes in the form of TYPE::MAX_RISK
     local info = GambleUtils:SplitString(message, "::")
-    local gameType = info[0]
-    local maxRisk = info[1]
+    local gameType = info[1]
+    local maxRisk = info[2]
 
     -- as long as there isn't a game going now
     if GambleCore:CurrentGame() == nil or GambleCore:CurrentGame().phase == GamePhase.Results then
         -- register the new game
-        GambleCore:_newGame(newGameType, author, maxRisk)    
+        GambleCore:_newGame(gameType, author, maxRisk, 0)    
 
         -- refresh the UI
         GambleUI:Refresh()

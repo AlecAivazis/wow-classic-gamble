@@ -194,7 +194,7 @@ function GambleUI:_drawPlayTab_noCurrentGame(container)
         local button = AceGUI:Create("Button")
         button:SetText(game.Name)
         button:SetRelativeWidth(0.48)
-        button:SetCallback("OnClick", function() GambleCore:NewGame(game.Name, tonumber(riskInput:GetText())) end)
+        button:SetCallback("OnClick", function() GambleCore:NewGame(game.Name, tonumber(riskInput:GetText()), tonumber(lastCallInput:GetText())) end)
         container:AddChild(button)
 
         -- if the button is in the left column
