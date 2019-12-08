@@ -69,7 +69,7 @@ function GambleCore:NewGame(type, maxRisk, lastCall)
     
     -- tell everyone what's going on
     GambleCore:Say(
-        "Now playing " .. currentGame.rules.Name .. "! Type " .. JoinMessage 
+        "Now playing " .. currentGame.rules.Name .. " for " .. maxRisk .. "! Type " .. JoinMessage 
         .. " in this channel to join. If you don't know how to play, you can whisper me \"" 
         .. ExplainMessage .. "\" for help."
     )

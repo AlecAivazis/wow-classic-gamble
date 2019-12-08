@@ -124,6 +124,12 @@ function GambleUI:_drawPlayTab(container)
         hostLabel:SetText("Host: " .. game.host)
         hostLabel:SetFontObject(GameFontHighlightMedium)
         container:AddChild(hostLabel)
+
+        -- list the max risk
+        local maxRiskLabel = AceGUI:Create("Label")
+        maxRiskLabel:SetText("Max Risk: " .. game.maxRisk)
+        maxRiskLabel:SetFontObject(GameFontHighlightMedium)
+        container:AddChild(maxRiskLabel)
     
         -- some more spacing
         GambleUI:VerticalSpace(container, "small")
